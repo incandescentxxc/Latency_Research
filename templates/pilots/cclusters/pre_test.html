@@ -1,0 +1,170 @@
+<html>
+<head>
+	<title>Demographic Questionaire</title>
+  <link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/stylesheet.css')}}" />
+
+		<style>
+			section{
+        font-family: Verdana;
+			}
+      li{
+        margin-bottom: 5px;
+      }
+      body{
+        font-family: Verdana;
+      }
+		</style>
+
+</head>
+<body>
+
+<h1> Data Visualization Study </h1>
+<h2> Section 1: Demographic Questionaire</h2>
+
+<p id="instructions"> Please answer the following questions. These will be kept confidential.<br>
+<br>
+<ol>
+    <li>What is your <b>age</b>?
+<br/>
+<Input type ='Radio' form="mainForm" name="age" value='18-25' /> 18 - 25 &nbsp; &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="age" value='26-35'/> 26 - 35 &nbsp; &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="age" value='36-45'/> 36 - 45 &nbsp; &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="age" value='46-55'/> 46 - 55 &nbsp; &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="age" value='56plus'/> 56+ &nbsp; &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="age" value='not_age'/> Not Specified
+<br/>
+<br/>
+    </li>
+    <li>What is your <b>gender</b>?
+    </br>
+    <Input type ='Radio' form="mainForm" name="sex" value='Male'/> Male &nbsp; &nbsp; &nbsp; &nbsp; 
+    <Input type ='Radio' form="mainForm" name="sex" value='Female'/> Female &nbsp; &nbsp; &nbsp; &nbsp; 
+    <Input type ='Radio' form="mainForm" name="sex" value='not_MF'/> Not Specified
+    </li>
+    <li>What is the <b>highest degree you have obtained / are pursuing</b>? 
+<br/>
+<Input type = 'Radio' form="mainForm" name = "education" value = "HighSchool"/> High School &nbsp; &nbsp; &nbsp; 
+<Input type = 'Radio' form="mainForm" name = "education" value = "Associates"/> Associates &nbsp; &nbsp; &nbsp;  
+<Input type = 'Radio' form="mainForm" name = "education" value = "Bachelors"/> Bachelors &nbsp; &nbsp; &nbsp;  
+<Input type = 'Radio' form="mainForm" name = "education" value = "Masters"/> Masters &nbsp; &nbsp; &nbsp;  
+<Input type = 'Radio' form="mainForm" name = "education" value = "PhD"/> PhD &nbsp; &nbsp; &nbsp;  
+<Input type = 'Radio' form="mainForm" name = "education" value = "not_sp"/> Not Specified
+    </li>
+    <li>What is the <b>size of your screen</b>?
+<br/>
+<Input type ='Radio' form="mainForm" name="screen" value='10_12'/> 10 - 12" &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="screen" value='13_15'> 13 - 15"  &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="screen" value='17_21'> 17 - 21" &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="screen" value='23_25'> 23 - 25" &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="screen" value='25plus'> 25"+    &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="screen" value='not_sp'> Not Specified
+    </li>
+
+    <li>What is your level of Computer Experience?
+    <br>
+<Input type ='Radio' form="mainForm" name="cmpexperience" value='novice'> Novice &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="cmpexperience" value='beginner'> Experienced Beginner &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="cmpexperience" value='intermediate'> Intermediate User    &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="cmpexperience" value='expert'> Expert    &nbsp; &nbsp; &nbsp; 
+    </li>
+    <li>What type of computer are you using?
+    <br>
+<Input type ='Radio' form="mainForm" name="cmptype" value='desktop'> Desktop &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="cmptype" value='laptop'> Laptop &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="cmptype" value='tablet-ipad'> Tablet/ipad    &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="cmptype" value='phone'> Smart phone    &nbsp; &nbsp; &nbsp;
+<Input type = 'Radio' form="mainForm" name = "cmptype" value = "other"/> Other
+    </li>
+    <!--<li>What brand of computer are you using?<br><input type="text" form="mainForm" name="cmp-brand"></li>-->
+    <!--<li>What operating system are you using right now?<br><input type="text" form="mainForm" name="operating-system"></li>-->
+    <li>How many hours per day do you spend on a computer?
+    <br>
+<Input type ='Radio' form="mainForm" name="cmphours" value='under-l'> Less than 1 hours &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="cmphours" value='1-3'> Between 1 and 3 hours &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="cmphours" value='3-5'> Between 3 and 5 hours &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="cmphours" value='5-8'> Between 5 and 8 hours &nbsp; &nbsp; &nbsp;
+<Input type = 'Radio' form="mainForm" name = "cmphours" value = "8-above"/> More than 8 hours
+    </li>
+    <li>How often do you use the internet?
+    <br>
+<Input type ='Radio' form="mainForm" name="inthours" value='monthly'> Monthly &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="inthours" value='weekly'> Weekly &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="inthours" value='daily'> Daily &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="inthours" value='hourly'> Hourly
+    </li>
+    <li>Are you working on a public or a personal Computer?
+    <br>
+<Input type ='Radio' form="mainForm" name="pubcmp" value='public'> Public &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="pubcmp" value='personal'> Personal
+    </li>
+    <li>What kinds of computing devices do you own or frequently use? (check all that apply)
+    <br>
+<Input type ='checkbox' form="mainForm" name="devices" value='desktop'> Desktop &nbsp; &nbsp; &nbsp; 
+<Input type ='checkbox' form="mainForm" name="devices" value='laptop'> Laptop &nbsp; &nbsp; &nbsp; 
+<Input type ='checkbox' form="mainForm" name="devices" value='tablet-ipad'> Tablet/ipad &nbsp; &nbsp; &nbsp; 
+<Input type ='checkbox' form="mainForm" name="devices" value='mp3'> MP3 Player/ipod &nbsp; &nbsp; &nbsp; 
+<Input type ='checkbox' form="mainForm" name="devices" value='phone'> Smart phone
+
+    </li>
+</ol>
+
+<form  id="mainForm">
+      <input type="hidden" name="pTime1" id="pTime1" />
+      <input type="hidden" name="pTime2" id="pTime2" />
+      <input type="hidden" name="id" id="id"/> <!-- save id for next page-->
+      <!--<input type="hidden" name="questions" id="questions" />-->
+      <!--<input type="hidden" name="responses" id="responses" />-->
+      <input type= "hidden" id = "image_id" name = "image_id"/> 
+</form>
+
+  <p align="right"><button type="button" id="continueButton" style="font-size: 16px; width: 150px" onclick="handleSubmit()">Continue</button></p>
+</form>
+</body>
+<script>
+</script>
+<script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script>
+  var startTime;
+  var d = new Date();
+  sessionStorage.id = "{{guid}}";
+  //console.log(sessionStorage.id);
+  $('input[name="id"]').attr("value",sessionStorage.id);
+
+  function init(){
+      startTime = time();
+  }
+
+  function time(){
+    var d = new Date();
+    //start time in milliseconds
+    return d.getTime();
+  }
+
+  function checkInput(){
+    //alert("Checking input");
+    document.getElementById("pTime1").value = (time() - startTime) / 1000;
+    //document.getElementById("questions").value = JSON.stringify(questions);
+    //document.getElementById("responses").value = JSON.stringify(responses);
+  }
+
+  window.onload = init;
+  function handleSubmit(){
+    checkInput();
+    var values = $("#mainForm").serialize();
+    $.ajax({
+      url: "/search-study/save-responses/pre-test/",
+      data: values,
+      type: "POST",
+      success: function(data){
+        window.location = "{{url_for('renderPuzzleInstr')}}";
+      },error: function(st) {
+        window.location = "{{url_for('renderPuzzleInstr')}}";
+      }
+    });
+  };
+</script>
+</html>

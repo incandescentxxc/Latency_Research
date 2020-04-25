@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Locus of Control Questionnaire</title>
+<link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/stylesheet.css')}}" />
+<script type="text/javascript" src = "{{url_for('static',filename='js/jquery-1.9.1.min.js')}}"></script>
+</head>
+<body>
+
+<h1> Data Visualization Study </h1>
+<h2> Section 2: Locus of Control Questionnaire</h2>
+
+<div id="instructions"> 
+<p>
+Use the rating scale below to describe how accurately each statement describes <i><b>you</b></i>. Describe yourself as you generally 
+are now, not as you wish to be in the future.
+</p>
+
+<p>
+<b> Caution: </b> The survey includes attention checks and your time spent completing the task
+will be compared to other workers. <b> Simply clicking through this portion will result in your HIT being rejected. </b>
+</p>
+
+</div>
+
+<p id="page1"></p>
+<p id="page2"></p>
+<form  id="mainForm">
+      <input type="hidden" name="pTime1" id="pTime1" />
+      <input type="hidden" name="pTime2" id="pTime2" />
+      <input type="hidden" name="id" id="id"/> <!-- save id for next page-->
+      <input type="hidden" name="questions" id="questions" />
+      <input type="hidden" name="responses" id="responses" />
+      <input type= "hidden" id = "image_id" name = "image_id"/> 
+</form>
+	
+<p align = "right"> <button style="font-size:16px; width: 150px;" type="button" id="continue1"  value = "Continue" onclick="handleSubmit()">Continue</button>
+</p>
+</body>
+
+<script type="text/javascript">
+
+function randomize(){
+   var rand1 = Math.random(0, 1);
+   var rand2 = Math.random(0, 1);
+   var s1 = "";
+   if(rand1 > 0.5)
+    s1 += "w-";
+   else
+    s1 += "p-";
+
+    s1 += Math.ceil(rand2 * 4);
+   
+    return s1;
+}
+
+    //******************************************************
+    //******************************************************
+    //.....important! Set up conditions!
+    //******************************************************
+    //******************************************************
+    
+    document.getElementById("image_id").value = "p-1";//randomize();
+    
+    //******************************************************
+    //******************************************************
+    //******************************************************
+
+    var startTime;
+    var batch = 22;
+    var page = 1;
+    var responses = new Array();
+
+    /*<?php
+      srand(time());
+      echo "var r = " . rand() . ";\n";
+      //read file into array
+      $file = "questionnaire/personality_questions.txt";
+      $questions = file($file);
+      echo "var questions = ".json_encode($questions).";\n"; 
+    ?> */
+    var d = new Date();
+    var r = d.getTime() + Math.floor(Math.random() * 1000)
+    var questions = [
+  "I believe that my success depends on ability rather than luck.",
+  "I am the life of the party.",
+  "I sympathize with others' feelings.",
+  "I get chores done right away.",
+  "I have frequent mood swings.",
+  "I have a vivid imagination.",
+  "I believe that unfortunate events occur because of bad luck.",
+  "I don't talk a lot.",
+  "I am not interested in other people's problems.",
+  "I have eyes.",
+  "I often forget to put things back in their proper place.",
+  "I am relaxed most of the time.",
+  "I am not interested in abstract ideas.",
+  "I believe the world is controlled by a few powerful people.",
+  "I talk to a lot of different people at parties.",
+  "I feel others' emotions.",
+  "I like order.",
+  "I get upset easily.",
+  "I have difficulty understanding abstract ideas.",
+  "I believe some people are born lucky.",
+  "I do not have eyes.",
+  "I keep in the background."
+]
+    /*
+    $.ajax({
+      url:"questions.json",
+      type:"GET",
+      success:function(data){
+        questions = data
+      }
+    }) */
+
+    function init(){
+        startTime = time();
+
+        //var id = r.toString();
+        //document.getElementById("id").value = id; 
+        document.getElementById("id").value = sessionStorage.id; 
+        loadQuestions();
+    };
+    
+    function loadQuestions(){
+      var count = batch * (page - 1) + 1;
+      //alert(questions.length);
+      var text = "<table cellpadding=\"9\"> ";
+      for(; count <= questions.length && count <= (batch * page); count++ ){
+      //for(;count <= 5; count++){
+        text += "<tr bgcolor=" + rowColor(count) + "><td bgcolor="+ 
+          rowColor(count) + ">" + count +  ".   " + questions[count - 1] + 
+          "</td> <td> Strongly Disagree " +   
+          "<Input type = 'Radio' Name ='p" + count + "' value='1'>1 " + 
+          "<Input type = 'Radio' Name ='p" + count + "' value='2'>2 " + 
+          "<Input type = 'Radio' Name ='p" + count + "' value='3'>3 " +
+          "<Input type = 'Radio' Name ='p" + count + "' value='4'>4 " +
+          "<Input type = 'Radio' Name ='p" + count + "' value='5'>5 " +
+          "<Input checked = true style = 'display:none;' type = 'Radio' Name ='p" + count + "' value='-1'> " +
+          "Strongly Agree" + "</td> ";
+      }
+      
+      text += "</table>";
+      if(page == 1){
+         document.getElementById("page1").innerHTML = text;
+      }else{
+         document.getElementById("page2").innerHTML = text;
+      }
+    }
+    
+    function rowColor(num){
+        if(num % 2 == 0) 
+          return "#D0D0D0"; 
+        else 
+          return "white";
+    } 
+
+    function time(){
+        var d = new Date();
+        //start time in milliseconds
+        return d.getTime();
+    }
+    
+    function next(){
+      // console.log(document.getElementById("id"))
+      if(page == 1){
+        if(checkInput()){
+            document.getElementById("instructions").style.display = "none"; //hide
+            document.getElementById("page1").style.display = "none"; //hide
+            document.getElementById("continue1").style.display = "none";
+            document.getElementById("page2").style.display = "block"; //show
+            document.getElementById("continue2").style.display = "block";
+            startTime = time();
+            page = 2;
+            loadQuestions();
+        }
+      }
+    }  
+  
+    function checkInput(){
+    //alert("Checking input");
+    var i;
+    var max;
+
+    if(page == 1){
+      i = 1;
+      max = batch;
+    }else{
+      i = batch + 1;
+      max = 27; // number of questions
+    }
+    var isChecked = true;
+    for(; i <= max; i++){
+      var radioButtons = document.getElementsByName(("p"+ i));
+      
+      for(var j = 0; j < radioButtons.length; j++){
+        if(radioButtons[j].checked == true){
+          responses[i - 1] = radioButtons[j].value;
+        }
+        if(radioButtons[j].value == '-1' && radioButtons[j].checked == true){
+          isChecked = false;   
+        }
+      }
+    }
+
+
+    if(page == 1){
+        document.getElementById("pTime1").value = (time() - startTime) / 1000;
+        document.getElementById("questions").value = JSON.stringify(questions);
+        document.getElementById("responses").value = JSON.stringify(responses);
+        // return true;
+    }else{    
+        document.getElementById("pTime2").value = (time() - startTime) / 1000;
+        //alert(responses[questions[0]]);
+        document.getElementById("questions").value = JSON.stringify(questions);
+        document.getElementById("responses").value = JSON.stringify(responses);
+        // return true;
+    }
+
+     if (!isChecked){
+      if(confirm("You have unanswered questions! To keep answering, please click Cancel. Click OK to move on!")){
+        return true;
+      }else{
+        return false;
+      }
+     }
+     return true;
+  }
+    window.onload = init;
+    function handleSubmit(){
+
+      if(checkInput()){
+          var values = $("#mainForm").serialize();
+          $.ajax({
+          url: "/search-study/save-responses/locus/",
+          data: values,
+          type: "POST",
+          success: function(data){
+            window.location = "{{url_for('renderPuzzleInstr')}}";
+          }, error: function(data){
+            window.location = "{{url_for('renderPuzzleInstr')}}";
+          }
+        });
+      }
+    }
+</script>
+
+</html>
+
+

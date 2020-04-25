@@ -1,0 +1,20 @@
+<html>
+<head>
+<title>Study Complete</title>
+<link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/stylesheet.css')}}">
+<script type="text/javascript" src = "{{url_for('static',filename='js/jquery-1.9.1.min.js')}}"></script>
+</head>
+<body>
+<div>
+<br/><br/>
+<h1>Study Complete!</h1>
+<p>Thank you for taking part in our study. You may now submit the HIT by copying the confirmation code below.
+<h2 style="margin-top: 80px">Confirmation Code: <span id="confcode">WARNING: INVALID CODE</span></h2>
+</p>
+</div>
+</body>
+<script>
+$("#confcode").html(sessionStorage.id);
+$.get("{{url_for('logCompleted')}}",{"userid":sessionStorage.id});
+</script>
+</html>

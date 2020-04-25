@@ -1,0 +1,13 @@
+[
+{"fast":0,"quick":0,"med":0,"slow":0},
+{"fast":250,"quick":250,"med":250,"slow":250},
+{"fast":500,"quick":500,"med":500,"slow":500},
+{"fast":1000,"quick":1000,"med":1000,"slow":1000},
+{"fast":2000,"quick":2000,"med":2000,"slow":2000},
+
+{"fast":0,"quick":125,"med":250,"slow":500},
+{"fast":0,"quick":250,"med":500,"slow":1000},
+{"fast":0,"quick":500,"med":1000,"slow":2000},
+{"fast":0,"quick":500,"med":2000,"slow":4000},
+{"fast":0,"quick":1000,"med":2000,"slow":4000}
+]

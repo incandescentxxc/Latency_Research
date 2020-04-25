@@ -1,0 +1,206 @@
+<html>
+<head>
+	<title>Consent Form</title>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+		<!-- Optional theme -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+		<style>
+			section{
+				margin: 5%;
+			}
+		</style>
+
+</head>
+<body>
+<section>
+<h1>CONSENT TO PARTICIPATE IN NON-BIOMEDICAL RESEARCH</h1>
+<h2>Studying Visualization Performance Through Image Puzzles</h2>
+
+<div id="intro">
+
+<p>
+
+You are asked to participate in a research study conducted by Professor Michael
+Stonebraker (Principal Investigator), and Leilani Battle (graduate student),
+from the department of Electrical Engineering and Computer Science at the
+Massachusetts Institute of Technology (M.I.T.). You should read the information
+below, and ask questions about anything you do not understand, before deciding
+whether or not to participate (contact information is provided below). Clicking
+on the ‘Accept' button on the bottom of this page indicates that you are at
+least 18 years of age and agree to complete this study voluntarily.
+
+</p>
+
+</div>
+
+<h3>Participation and Withdrawal</h3>
+
+<div id="participation">
+
+<p>
+
+Your participation in this study is completely voluntary and you are free to choose whether to be in it or not. If you choose to be in this study, you may subsequently withdraw from it at any time without penalty or consequences of any kind. The investigator may withdraw you from this research if circumstances arise which warrant doing so.
+
+</p>
+
+</div>
+
+<h3>Purpose of the Study</h3>
+
+<div id="purpose">
+
+<p>
+
+The purpose of this study is to better understand how people explore visualizations, by having participants solve an image-based puzzle using a visualization tool that we created.
+
+</p>
+
+</div>
+
+<h3>Procedures</h3>
+
+<div id="procedures">
+
+<p>
+
+Participation in the study is expected to take 12 minutes, and time estimates for each procedure are given below. If you volunteer to participate in this study, we would ask you to do the following things:
+
+</p>
+
+<ul>
+<li>Complete a demographics survey (2 minutes)</li>
+<li>Solve an image-based puzzle using our visualization tool (7 minutes)</li>
+<li>Complete a final feedback survey (3 minutes)</li>
+</ul>
+
+</div>
+
+<h3>Potential Risks and Discomforts</h3>
+
+<div id="risks">
+
+<p>
+
+We do not forsee any sigificant risks in participating in this study.
+
+</p>
+
+</div>
+
+<h3>Potential Benefits</h3>
+
+<div id="benefits">
+
+<p>
+There are no additional benefits aside from payment for participation.
+
+</p>
+
+</div>
+
+<h3>Payment for Participation</h3>
+
+<div id="payment">
+
+<p>
+
+Participants will receive $1.60 for participating in this study.
+
+</p>
+
+</div>
+
+<h3>Confidentiality</h3>
+
+<div id="confidentiality">
+
+<p>
+
+Note that there is no way for us to identify you, beyond the public information associated with your MTurk worker ID. We will only collect MTurk worker IDs for the purposes of distributing compensation and your worker ID will not be associated with survey responses. Any information that is obtained in connection with this study and that can be identified with you will remain confidential and will be disclosed only with your permission or as required by law.
+
+</p>
+
+<p>
+
+Your interactions with our visualization tool (button presses, mouse clicks, etc.) will be recorded through the browser interface, and your responses to the study tasks and questionnaires will be saved.
+
+</p>
+
+<p>
+
+All data obtained from participants will be stored on a server located in a locked room in our lab. Internet access to the server is restricted to only individuals with proper login credentials for the server. The data will not be destroyed after analysis, and will remain on the server with the same security measures described above. All data collected from this study will be associated with a randomly generated participant ID, separate from your MTurk worker ID. The results of the research may be presented at scientific meetings or published in scientific journals.
+
+</p>
+
+</div>
+
+<h3>Identification of Investigators</h3>
+
+<div id="investigators">
+
+<p>
+
+If you encounter any technical problems at any point during this study, please return the HIT and contact the researchers to report any errors you encountered (email below). If you cannot complete the entire study, please do not submit the HIT. Your HIT will not be approved unless you reach a screen that says "Study Complete." If you have any questions or concerns about the research, please feel free to contact:
+</p>
+
+<p>
+
+<strong>Leilani Battle</strong><br/>
+
+Email: leibatt@mit.edu
+
+</p>
+
+</p>
+
+</div>
+
+<h3>Rights of Research Subjects</h3>
+
+<div id="rights">
+
+<p>
+
+You are not waiving any legal claims, rights or remedies because of your participation in this research study. If you feel you have been treated unfairly, or you have questions regarding your rights as a research subject, you may contact the Chairman of the Committee on the Use of Humans as Experimental Subjects, M.I.T., couhes@mit.edu.
+
+</p>
+
+</div>
+<form id="consentForm" action="/website/save_responses/consent">
+
+<div id="consent-div">
+
+<label id="consent-check-label" class="checkbox">
+
+<input id="consent-check" name="consent-check" type="checkbox" />I have read and understand the information above, and have decided to participate voluntarily in this study.
+<br>
+<input type="button" name="click" value="Accept" class="hidden btn-success" id="continueButton" onclick="window.location='{{url_for('renderPreTest')}}'" style="margin-left: 5%">
+
+</label>
+
+</div>
+
+</form>
+	
+</section>
+<!-- Latest compiled and minified JavaScript -->
+<script
+  src="https://code.jquery.com/jquery-3.1.1.min.js"
+  integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+  crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+
+  <script>
+  	$('#consent-check').click(function(){
+  		if(document.getElementById("consent-check").checked){
+  			$('#continueButton').removeClass("hidden")
+  		}
+  		else{
+  			alert("Please agree to the terms to continue")
+  			$('#continueButton').addClass("hidden")
+  		}
+  	})
+  </script>
+</body>
+</html>

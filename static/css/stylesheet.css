@@ -1,0 +1,65 @@
+body{
+	background-color:#FFF;
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:16px;
+	padding-left:20%;
+	/*margin-left:100px;*/
+	font-weight: 500;
+}
+
+table{
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:14px;
+	width: 850px;
+	/*margin-left: -10em;*/	
+}
+
+
+div.inner{
+	background-color:#ffffff;
+	width:600px;
+	padding:20px;
+	margin-left:10px;	
+}
+
+h1{
+	/*margin-left: 250px;*/
+	font-size:24px;
+}
+
+h2{
+	/*margin-left:290px;*/
+	font-size:20px;	
+}
+
+
+h3{
+	font-family:Arial, Helvetica, sans-serif;
+	font-size:18px;
+}
+
+div.inner_table{
+	background-color:#ffffff;
+	width:800px;
+	padding:20px;
+	margin-left:10px;	
+}
+
+p{
+	width: 800px;
+	color: #000;
+	font-size:16px;
+}
+
+p2{
+	style="margin-left:20px; 
+	margin-top:0px;"
+	width; 600px;
+}
+
+button{
+	font-size: 16px;
+}
+div.instructions{
+	width: 800px;
+}

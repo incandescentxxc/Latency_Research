@@ -1,0 +1,1 @@
+{"inthours": ["hourly"], "cmphours": ["8-above"], "cmpexperience": ["expert"], "age": ["18-25"], "devices": ["desktop", "laptop", "phone"], "sex": ["Male"], "image_id": [""], "cmptype": ["laptop"], "pubcmp": ["personal"], "pTime2": [""], "screen": ["13_15"], "education": ["Bachelors"], "id": ["c205ba5e-7f16-11ea-91e4-faffc21eb232"], "pTime1": ["315.554"]}

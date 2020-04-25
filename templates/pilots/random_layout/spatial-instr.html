@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<head>
+<title>Spatial Ability Test</title>
+
+<link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/stylesheet.css')}}" />
+
+<style type="text/css">
+.instrucStyle {
+}
+</style>
+
+</head>
+<body>
+
+<h1>Data Visualization Study </h1>
+
+Take a break... (If you need one)
+
+<h2>Section 4: Spatial Ability Test</h2>
+<p>
+In the second portion of this study, you will be asked to complete a two surveys. 
+The first is used to test your spatial ability.
+There are two sections and you will be given 3 mins for each section.
+The other survey is a short questionnaire about the visualization tool.
+Please answer these questions to the best of your ability. 
+<!--You will receive $0.02 bonus for each correct response in this section. -->
+</p>
+
+<h2>Paper Folding Test (Instructions)</h2>
+
+<p> In this test you are to imagine the folding and unfolding of pieces of paper. </p>
+
+<p> In each problem in the test there are some figures drawn at the left of a vertical line and there are others drawn at the right of the line.  </p>
+
+<p> The figures at the left represent a square piece of paper being folded, and the last of these figures has one or two small circles drawn on it to show where the paper has been punched. </p>
+
+<p> Each hole is punched through all the thicknesses of paper at that point. One of the five figures at the right of the vertical line shows where the holes will be when the paper is completely unfolded. You are to decide which one of these figures is correct and click the button underneath for that figure. </p>
+
+<p> Now try the sample problem below. (In this problem only one hole was punched in the folded paper.) </p>
+
+<img src = "{{url_for('static',filename='img/paper_folding/sample.png')}}" alt="Sample" width="700px" align="middle"/> <br />
+
+<p> The correct answer to the sample problem above is C and so it should have been chosen by clicking the radio button underneath it. The figures below show how the paper was folded and why C is the correct answer. </p>
+ 
+<img src = "{{url_for('static',filename='img/paper_folding/sample_answer.png')}}" alt="Sample Answer" width="700px" align="middle" /> <br />
+
+<p> In these problems all of the folds that are made are shown in the figures at the left of the lines, and the paper is not turned or moved in any way, except to make the folds shown in the figures. </p>
+ 
+              
+<p> Remember, the answer is the figure that shows the position of the holes when the paper is completely unfolded. </p>
+
+
+<p> Your score on this test will be the number marked correctly minus a fraction of the number marked incorrectly. Therefore, it will <b>not</b> be to your advantage to guess unless you are able to eliminate one or more of the answer choices as wrong.</p>
+              
+
+<p> You will have <b>3 minutes</b> for each of the two parts to this test; each part has 1 page. </p>
+
+<form method = "post" action = "{{url_for('renderSpatialFirst')}}">
+  <p>&nbsp;</p>
+    <p align = "right">
+      <input type= "hidden" name = "id" id = "id" value = "DEBUGGING" /> 
+      <input type="hidden" name = "image_id" value = "DEBUGGING" />
+      <input type= "submit"  style="width: 150px;margin-left:160px;font-size:16px;" id= "Accept" value = "Continue">
+    </p>
+
+</form>
+
+<script type="text/javascript">
+  // store waldo data
+  document.getElementById("id").value = sessionStorage.id
+    </script>

@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+
+svg {
+  border: 3px solid black;
+}
+
+.hide {
+  display: none;
+}
+
+button {
+  margin-bottom: 10px;
+}
+
+#sendDataInfo,#batchNumber {
+  color: blue;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+#timer-container {
+  display: none;
+}
+
+</style>
+
+<div>
+<p>You can drag the collage to see more images within the collage. There may be a delay before some images appear in the collage.
+</p>
+<!--<p>There is a picture of a boat in the shape of a bird, with a man sitting in it. <b>Find the two copies of this boat picture</b> within the collage.</p>-->
+<p>There are two copies of a picture of a dinosaur. <b>Find one copy of this dinosaur picture</b> within the collage.</p>
+<p><b>Please do not reload the page or hit the back button in the browser window!</b></p>
+<div id="timer-container"><b><span id="timer">0 min 00 seconds</span></b> elapsed</div>
+<p>Targets Found: <span id="targetsFound"></span></p>
+<div>
+  <span id="sendDataInfo"></span> <span id="batchNumber"></span>
+</div>
+<!--
+<p>This is a collage of bird images. You can drag the collage to see more images within the collage.</p>
+
+<p>There is a picture of a boat that appears twice in this collage. Find both copies of this boat picture. As you find each
+copy, drag the collage so the target picture is in the center of the collage
+window, and click on the "FOUND" button below. The page will pop up a window to
+confirm that you made progress in the task. The target pictures will be clearly
+marked as found after the confirmation.
+</p>
+<p>
+After finding both copies of the target picture, hit the "QUIT" button to complete this task.
+</p>
+-->
+
+<button id="finish-button">FOUND <span id="answer-number"></span></button>
+<button id="quit-button">QUIT</button>
+</div>
+<div id="svg-container">
+<svg id="svg-obj" width="700" height="700"></svg>
+<p id="done-text" class="hide">You have <b> 0 min 0 seconds</b>. Time out. Please click "QUIT".</p>
+</div>
+<script src="{{url_for('static',filename='lib/d3/d3.js')}}"></script>
+<script src="{{url_for('static',filename='js/logs.js')}}"></script>
+<script>
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+  this.parentNode.appendChild(this);
+  });
+};
+
+//var server_url = "http://modis.csail.mit.edu:5064/search-study/";
+//var server_url = "http://localhost:5064/search-study/";
+var log = [];
+var userid = sessionStorage.id;
+//console.log(userid);
+var timer_interval = null;//setInterval(timer, 1000); // Time in milliseconds
+var timer_counter = 0;
+
+var svg = d3.select("svg"),
+    width = +svg.attr("width"),
+    height = +svg.attr("height"),
+    imwidth = 465,
+    imheight = 349,
+    boxrad = {"x":imwidth,"y":imheight};
+    //boxrad = {"x":imwidth/2.0,"y":imheight/2.0};
+
+svg.append("text")
+        .attr("x",0)
+        .attr("y",100)
+        .text("LOADING")
+        .attr("font-family","sans-serif")
+        .attr("font-size","100px")
+        .attr("fill","blue")
+        .classed("loadingText", true);
+svg.append("text")
+        .attr("x",0)
+        .attr("y",100+80)
+        .text("DATA...")
+        .attr("font-family","sans-serif")
+        .attr("font-size","100px")
+        .attr("fill","blue")
+        .classed("loadingText", true);
+svg.append("text")
+        .attr("x",0)
+        .attr("y",100+80+60)
+        .text("This may take a few")
+        .attr("font-family","sans-serif")
+        .attr("font-size","60px")
+        .attr("fill","blue")
+        .classed("loadingText", true);
+svg.append("text")
+        .attr("x",50)
+        .attr("y",100+80+60+60)
+        .text("minutes...")
+        .attr("font-family","sans-serif")
+        .attr("font-size","60px")
+        .attr("fill","blue")
+        .classed("loadingText", true);
+
+
+var imagesList = [];
+var imagesCache = {};
+
+var image_positions = JSON.parse(decodeHtml("{{imagesDict}}"));
+var tilesAdded = [];
+// where the user starts in the dataset
+// grid position
+//var starting_pos = {"x":3,"y":5};
+var starting_pos = {"x":{{starting_pos_x}},"y":{{starting_pos_y}}};
+// pixel position
+var center_loc = {"x":starting_pos.x*imwidth+imwidth/2.0,
+  "y":starting_pos.y*imheight+imheight/2.0};
+//var center_loc = {"x":width/2.0,"y":height/2.0};
+var staging_loc = {"x":center_loc.x,"y":center_loc.y};
+var fast={{delayVals_fast}},quick={{delayVals_quick}},med={{delayVals_med}},slow={{delayVals_slow}};
+//var fast=0,quick=500,med=2000,slow=4000;
+//var fast=0,quick=250,med=500,slow=1000;
+
+// grid positions
+//var good_pos ={"x":9,"y":0}, bad_pos={"x":9,"y":10};
+var good_pos = {"x":{{good_pos_x}},"y":{{good_pos_y}}};
+var bad_pos = {"x":{{bad_pos_x}},"y":{{bad_pos_y}}};
+// pixel positions
+var good_loc ={"x":imwidth*good_pos.x+imwidth/2.0,
+  "y":imheight*good_pos.y+imheight/2.0};
+var bad_loc={"x":imwidth*bad_pos.x+imwidth/2.0,
+  "y":imheight*bad_pos.y+imheight/2.0};
+var r=50;
+//var good_loc ={"x":0,"y":1600}, bad_loc={"x":2400,"y":1600},r=50;
+//var good_loc ={"x":100,"y":500}, bad_loc={"x":600,"y":500},r=50;
+//var good_loc ={"x":100,"y":500}, bad_loc={"x":100,"y":100},r=50;
+//var good_loc ={"x":100,"y":498}, bad_loc={"x":100,"y":98},r=50;
+var goodBox = {"minp":{"x":good_loc.x-boxrad.x,"y":good_loc.y-boxrad.y},
+  "maxp":{"x":good_loc.x+boxrad.x,"y":good_loc.y+boxrad.y}};
+var badBox = {"minp":{"x":bad_loc.x-boxrad.x,"y":bad_loc.y-boxrad.y},
+  "maxp":{"x":bad_loc.x+boxrad.x,"y":bad_loc.y+boxrad.y}};
+var sample_pos = 100;
+// controlled by computeHalfLine
+var halfLine = null;
+
+// controlled by traverseImagePositions
+var positions = {};
+var global_max = {};
+var pixel_positions = {};
+// ensures that ordering is consistent when adding tiles
+var pixelOrdersX = [];
+var pixelOrdersY = [];
+
+//controlled by click/drag handlers
+var click_flag = false;
+var targetsFound = 0;
+var targetsFoundObj = document.getElementById("targetsFound");
+var targetsFoundList = [];
+targetsFoundObj.innerText = targetsFound;
+var finish_button_obj = document.getElementById("finish-button");
+var quit_button_obj = document.getElementById("quit-button");
+quit_button_obj.onclick = function() {
+  if(confirm("You are leaving the collage page. To stay on this page and continue the training task, hit Cancel. Click OK to submit your answers and move on to the next task!")) {
+    sessionStorage.trainingTime = formatTime(timer_counter);
+    logStudyEndButtonClick();
+    logTargetsFoundList();
+    var sendDataInfoObj = document.getElementById("sendDataInfo");
+    var batchNumberObj = document.getElementById("batchNumber");
+    var url = "{{url_for('storeTrainingLogDataInBatches')}}";
+      sendDataInfoObj.innerText = "Sending log data...";
+    
+      sendInBatches(userid,log,batchNumberObj,url,function(){
+        batchNumberObj.innerText = "";
+        sendDataInfoObj.innerText = "Done sending log data! Moving to next page...";
+        window.location = "{{url_for('renderPuzzleInstr')}}";
+      });
+  }
+};
+
+// did the user already find this target?
+function alreadyFound(curr_pos) {
+  for (var i = 0; i < targetsFoundList.length; i++) {
+    var pos = targetsFoundList[i];
+    if(curr_pos.x === pos.x && curr_pos.y === pos.y) {
+      return true;
+    }
+  }
+  return false;
+};
+
+finish_button_obj.onclick = function() {
+  //console.log("got here in onclick");
+  if(targetsFoundList.length === 2) {
+    alert("You have already marked both target pictures as found. You have completed the task.");
+    return;
+  }
+  //console.log(staging_loc,Math.floor(staging_loc.x / imwidth), Math.floor(staging_loc.y / imheight));
+  var curr_pos = {"x":Math.floor(staging_loc.x / imwidth),"y":Math.floor(staging_loc.y / imheight)};
+  if(curr_pos.x === good_pos.x && curr_pos.y === good_pos.y ||
+    curr_pos.x === bad_pos.x && curr_pos.y === bad_pos.y) {
+    if(alreadyFound(curr_pos)) {
+      alert("You have already marked this target picture as found. Try to find the other target picture.");
+    } else {
+      logFoundButtonClick();
+      targetsFound++;
+      targetsFoundList.push(curr_pos);
+      targetsFoundObj.innerText = targetsFound;
+      if(targetsFound === 2) {
+        alert("Correct! You have found both targets. You are done with this task.");
+      } else {
+        alert("Correct, you found the target picture! You are done with this task.");
+      }
+      tileContainer.selectAll(".blahblahblah")
+        .data([{"x":width/2.0,"y":height/2.0}])
+        .enter()
+        .append("text")
+        .attr("x",function(d){return d.x;})
+        .attr("y",function(d){return d.y;})
+        .text("FOUND")
+        .attr("font-family","sans-serif")
+        .attr("font-size","60px")
+        .attr("fill","blue")
+        .attr("text-anchor","middle")
+        .classed("foundText", true);
+      }
+  } else {
+    alert("The target picture is not in view. Make sure the target picture is in the center of the collage window.");
+  }
+};
+
+// for tracking movement
+var svg_obj = document.getElementById("svg-obj");
+var tileContainer = svg.append("g");
+var overlay = svg.append("rect")
+  .attr("width", +svg.attr("width"))
+  .attr("height", +svg.attr("height"))
+	.style("fill", "#000000")
+	.style("opacity",0)
+  .attr("class","pan-rect");
+
+var prev = {};// = {"x":0,"y":0};
+var diff = {"x":0,"y":0};
+var prevDragStart = {"x":null,"y":null}; // used to pair drag start with drag end
+var prevStagingLoc = {"x":null,"y":null}; // used to pair drag start with drag end
+overlay.call(d3.drag()
+  .on("start", function() {
+    //if(click_flag) return;
+    var coords = d3.mouse(overlay.node());
+    logDragStart();
+    prevDragStart.x = coords[0];
+    prevDragStart.y = coords[1];
+    prevStagingLoc.x = staging_loc.x;
+    prevStagingLoc.y = staging_loc.y;
+    prev.x = coords[0];
+    prev.y = coords[1];
+    logStagingLoc();})
+  .on("drag", function() {
+    //if(click_flag) return;
+    logDragMid();updatePrev();logStagingLoc();
+  })
+  .on("end", function() {
+    //if(click_flag) return;
+    logDragEnd();
+    updatePrev();
+    removeOffscreenTiles();
+    addPreviouslyHiddenTiles(sample_pos);
+    logStagingLoc();
+    //console.log("staging_loc.x",staging_loc.x,"staging_loc.y",staging_loc.y);
+  })
+);/*.on("click",function() {
+  if(click_flag) {
+    click_flag = false;
+    logAnswerMouseClick();
+    //svg.append("circle").attr("fill","black").attr("r",5).attr("cx",coords[0]).attr("cy",coords[1]);
+  }
+});
+*/ 
+
+function decodeHtml(html) {
+    var txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+};
+
+function computeHalfLine(goodp,badp) {
+  // find midpoint between goodp and badp
+  var midp = {
+    "x":(goodp.x+badp.x)/2.0,
+    "y":(goodp.y+badp.y)/2.0,
+  };
+
+
+  if(badp.x ===goodp.x) { // half line is horizontal line
+    if(badp.y ===goodp.y) { // points are equal
+      return null; // invalid state
+    }
+    var p1 = {"x":0,"y":midp.y};
+    var p2 = {"x":global_max.x+imwidth-1,"y":midp.y};
+    return {"a":p1,"b":p2};
+  }
+  // find the perpendicular line that goes through the midpoint
+  var slope = (badp.y - goodp.y) / (badp.x - goodp.x);
+  //console.log("slope",slope,goodp,badp);
+  var F = null;
+  if(slope <0 || slope > 0) {
+    var inv_slope = -1.0 / slope; 
+    var b = midp.y - inv_slope*midp.x;
+    var F = function(x,y) {return inv_slope * x + b};
+    var p1 = {"x":0,"y":F(0)};
+    var p2 = {"x":global_max.x+imwidth-1,"y":F(global_max.x+imwidth-1)};
+    return {"a":p1,"b":p2};
+  } else { // half line is vertical line
+    var p1 = {"x":midp.x,"y":0};
+    var p2 = {"x":midp.x,"y":global_max.y+imheight-1};
+    return {"a":p1,"b":p2};
+  }
+};
+
+//preload the images in the collage
+function preloadImages() {
+  var unloaded = imagesList.length;
+  //console.log("unloaded",unloaded);
+  for(var i = 0; i < imagesList.length; i++) {
+    preloadImage(imagesList[i],function() {
+      unloaded--;
+      if(unloaded === 0) {
+        console.log("done preloading");
+        init(); // continue with the rest of the process
+      }
+      //console.log(unloaded);
+    });
+  }
+};
+
+// preload the image at the given url
+function preloadImage(url,callback) {
+  // already cached
+  if(imagesCache.hasOwnProperty(url)) {
+    callback();
+    return;
+  }
+  try {
+    var _img = new Image();
+    _img.onload = callback;
+    _img.src = url;
+    imagesCache[url] = _img;
+    //console.log("loaded image",url);
+  } catch (e) {
+    console.log("failed to load image",url);
+  }
+};
+
+
+// used to identify all the positions in the image_positions object
+function traverseImagePositions(sample) {
+  pixel_positions = {"x":{}};
+  pixelOrdersX = [];
+  pixelOrdersY = [];
+  var positions = [];
+  for (var xpos in image_positions.x) {
+    if (image_positions.x.hasOwnProperty(xpos)) {
+      var pxpos = xpos * imwidth;
+      if(!("x" in global_max) || global_max.x < pxpos) {
+        global_max.x = pxpos;
+      }
+      if(!(pxpos in pixel_positions.x)) {
+        pixel_positions.x[pxpos]= {"y":{}};
+      }
+      pixelOrdersX.push(pxpos);
+      var tempPixelOrdersY = [];
+      for (var ypos in image_positions.x[xpos].y) {
+        if (image_positions.x[xpos].y.hasOwnProperty(ypos)) {
+          var pypos = ypos * imheight;
+          if(!("y" in global_max) || global_max.y < pypos) {
+            global_max.y = pypos;
+          }
+          if(!(pypos in pixel_positions.x[pxpos].y)) {
+            pixel_positions.x[pxpos].y[pypos]= {"sample":image_positions.x[xpos].y[ypos].sample};
+          }
+          //imagesList.push("{{url_for('serveImage',collection='500-375')}}?image_name="+image_positions.x[xpos].y[ypos].sample[sample_pos]);
+          imagesList.push("{{url_for('serveImage',collection='balanced-500-375')}}?image_name="+image_positions.x[xpos].y[ypos].sample[sample_pos]);
+          tempPixelOrdersY.push(pypos);
+          // only add if it's in the initial viewport
+          //positions.push({"x":xpos*imwidth,"y":ypos*imheight,"sample":image_positions.x[xpos].y[ypos].sample[sample]});
+          var temp = {"x":xpos*imwidth-staging_loc.x+width/2.0,
+            "y":ypos*imheight-staging_loc.y+height/2.0,"sample":image_positions.x[xpos].y[ypos].sample[sample]};
+          var temp2 = {"staging_loc":staging_loc,"pxpos":parseFloat(pxpos),"pypos":parseFloat(pypos),
+            "x":parseFloat(pxpos)-parseFloat(staging_loc.x)+ width/2.0,
+            "y":parseFloat(pypos)-parseFloat(staging_loc.y)+height/2.0,
+            "sample":image_positions.x[xpos].y[ypos].sample[sample]};
+          //if(tileWithinBox({"x":staging_loc.x-width/2.0+1,"y":staging_loc.y-height/2.0+1},
+          //  {"x":staging_loc.x+width/2.0-1,"y":staging_loc.y+height/2.0-1},temp,imwidth,imheight)) {
+          if(tileWithinBox({"x":0,"y":0},{"x":width,"y":height},temp,imwidth,imheight)) {
+              //positions.push(temp);
+              positions.push(temp2);
+          }
+        }
+      }
+      pixelOrdersY.push(tempPixelOrdersY); // for each pxpos, should have an array of pypos values
+    }
+  }
+  //console.log(positions);
+  //console.log("imagesList",imagesList);
+  preloadImages();
+  return positions;
+};
+
+function updatePrev() {
+  //console.log(["old prev",prev.x,prev.y]);
+  var coords = d3.mouse(overlay.node());
+  diff = {"x":coords[0] - prev.x,"y":coords[1]-prev.y};
+  prev.x = coords[0];
+  prev.y = coords[1];
+  //console.log(["new prev",prev.x,prev.y]);
+  //console.log(["diff",diff.x,diff.y]);
+  staging_loc.x -= diff.x;
+  staging_loc.y -= diff.y;
+  tileContainer.selectAll(".tiles").attr("x",function(d){d.x = d.x+diff.x;return d.x;})
+    .attr("y",function(d){d.y = d.y+diff.y;return d.y;});
+
+  // update found text
+  tileContainer.selectAll(".foundText").attr("x",function(d){d.x = d.x+diff.x;return d.x;})
+    .attr("y",function(d){d.y = d.y+diff.y;return d.y;});
+
+
+  // update background
+  var bgx = parseFloat(svg.select("#background-rect").attr("x"));
+  var bgy = parseFloat(svg.select("#background-rect").attr("y"));
+  svg.select("#background-rect").attr("x",bgx+diff.x)
+    .attr("y",bgy+diff.y);
+  //svg.selectAll(".target").attr("cx",function(d){d.x = d.x+diff.x;return d.x;})
+  //  .attr("cy",function(d){d.y = d.y+diff.y;return d.y;});
+};
+
+function addPreviouslyHiddenTiles(sample) {
+  var d = {"x":staging_loc.x - center_loc.x,
+    "y":staging_loc.y - center_loc.y};
+  //console.log("d",d);
+  var xscan,yscan; 
+  // if pan right, add tiles from the left
+  if(d.x < 0) {
+    xscan = [staging_loc.x-width/2.0,center_loc.x-width/2.0];
+  }  
+  // if pan left, add tiles from the right
+  else {
+    xscan = [center_loc.x+width/2.0,staging_loc.x+width/2.0];
+  }
+  // if pan down, add tiles from the top
+  if(d.y < 0) {
+    yscan = [staging_loc.y-height/2.0,center_loc.y-height/2.0];
+  }  
+  // if pan up, add tiles from the bottom
+  else {
+    yscan = [center_loc.y+height/2.0,staging_loc.y+height/2.0];
+  }
+
+  getTilesWithinBounds(d,xscan,yscan,sample);
+  // update center
+  center_loc.x = staging_loc.x;
+  center_loc.y = staging_loc.y;
+};
+
+function getTilesWithinBounds(d,xscan,yscan,sample) {
+  var add_positions = [];
+  var xrange = [staging_loc.x-width/2.0,staging_loc.x+width/2.0];
+  var yrange = [staging_loc.y-height/2.0,staging_loc.y+height/2.0];
+  //console.log("xscan",xscan);
+  //console.log("yscan",yscan);
+  //console.log("xrange",xrange);
+  var pxposKeys = pixelOrdersX;
+  for(var i = 0; i < pxposKeys.length; i++) {
+    var pxpos = pxposKeys[i];
+    if(!pixel_positions.x.hasOwnProperty(pxpos)) continue;
+    var pyposKeys = pixelOrdersY[i];
+    pxpos = parseFloat(pxpos);
+    for(var j = 0; j < pyposKeys.length; j++) {
+      var pypos = pyposKeys[j];
+      if(!pixel_positions.x[pxpos].y.hasOwnProperty(pypos)) continue;
+      pypos = parseFloat(pypos);
+      if(tilesAdded.filter(function(d){return d.pxpos === pxpos && d.pypos === pypos}).length > 0) {
+        //console.log("found duplicate, skipping");
+        continue;
+      }
+      // is it in the update range?
+      if((d.x >= 0) && (pxpos) >= xscan[0] && (pxpos) < xscan[1] && 
+          (pypos >= yrange[0] && pypos < yrange[1] || (pypos+imheight-1) >= yrange[0] && (pypos+imheight-1) < yrange[1]) ||
+        (d.y < 0) && (pypos+imheight-1) >= yscan[0] && (pypos+imheight-1) < yscan[1] && 
+          (pxpos >= xrange[0] && pxpos < xrange[1] || (pxpos+imwidth-1) >= xrange[0] && (pxpos+imwidth-1) < xrange[1]) ||
+        // need to check both ends of the yrange
+        (d.x < 0) && (pxpos+imwidth-1) >= xscan[0] && (pxpos+imwidth-1) < xscan[1] &&
+          (pypos >= yrange[0] && pypos < yrange[1] || (pypos+imheight-1) >= yrange[0] && (pypos+imheight-1) < yrange[1]) ||
+        // need to check both ends of the xrange
+        (d.y >= 0) && (pypos) >= yscan[0] && (pypos) < yscan[1] &&
+          (pxpos >= xrange[0] && pxpos < xrange[1] || (pxpos+imwidth-1) >= xrange[0] && (pxpos+imwidth-1) < xrange[1])) {
+
+          add_positions.push({"staging_loc":staging_loc,"pxpos":parseFloat(pxpos),"pypos":parseFloat(pypos),
+            "x":parseFloat(pxpos)-parseFloat(staging_loc.x)+ width/2.0,
+            "y":parseFloat(pypos)-parseFloat(staging_loc.y)+height/2.0,
+            "sample":pixel_positions.x[pxpos].y[pypos].sample[sample]});
+          //console.log({"x":parseFloat(pxpos)-staging_loc.x + width/2.0,
+          //  "y":parseFloat(pypos)-staging_loc.y+height/2.0,"sample":pixel_positions.x[pxpos].y[pypos].sample[sample]});
+          //console.log(pypos,staging_loc.y,height/2.0);
+      }
+    }
+  }
+  
+  var cgl = {};
+  cgl.x = good_loc.x - staging_loc.x + width/2.0;
+  cgl.y = good_loc.y - staging_loc.y + height/2.0;
+  var bgl = {};
+  bgl.x = bad_loc.x - staging_loc.x + width/2.0;
+  bgl.y = bad_loc.y - staging_loc.y + height/2.0;
+  appendTilesUsingTargets(cgl,bgl,add_positions);
+  //appendTilesWithRandomDelays(add_positions,0,1000);
+};
+
+function removeOffscreenTiles() {
+  tileContainer.selectAll(".tiles").filter(function(d) {
+    return d.x > (width) || d.x < -imwidth || d.y < -imheight || d.y > (height);
+    }).each(function(d,i){logTileRemoval(d);}).remove();
+};
+
+// given the location of the "good" target, and the "bad" target
+// and the tiles to add, set the appropriate delays for the tiles
+// with respect to these targets
+function appendTilesUsingTargets(goodp,badp,tilePositions) {
+  var goodLine = {"a":{"x":width/2.0,"y":height/2.0},"b":goodp};
+  var badLine = {"a":{"x":width/2.0,"y":height/2.0},"b":badp};
+  //svg.selectAll("line").remove();
+  //svg.append("line").attr("x1",width/2.0).attr("y1",height/2.0).attr("x2",goodp.x).attr("y2",goodp.y).attr("stroke","blue");
+  //svg.append("line").attr("x1",width/2.0).attr("y1",height/2.0).attr("x2",badp.x).attr("y2",badp.y).attr("stroke","blue");
+  var gb = {"minp":{"x":null,"y":null},"maxp":{"x":null,"y":null}}
+  var bb = {"minp":{"x":null,"y":null},"maxp":{"x":null,"y":null}};
+
+  gb.minp.x = goodBox.minp.x - staging_loc.x+width/2.0;
+  gb.minp.y = goodBox.minp.y - staging_loc.y+height/2.0;
+  gb.maxp.x = goodBox.maxp.x - staging_loc.x+width/2.0;
+  gb.maxp.y = goodBox.maxp.y - staging_loc.y+height/2.0;
+  bb.minp.x = badBox.minp.x - staging_loc.x+width/2.0;
+  bb.minp.y = badBox.minp.y - staging_loc.y+height/2.0;
+  bb.maxp.x = badBox.maxp.x - staging_loc.x+width/2.0;
+  bb.maxp.y = badBox.maxp.y - staging_loc.y+height/2.0;
+  var delays1 = setDelaysByBox(gb,bb,tilePositions);
+  //console.log("box delays",delays1);
+  var delays2 = setDelaysByPathLines(goodLine,badLine,goodp,badp,tilePositions);
+  //console.log("path delays",delays2);
+  var hl = {"a":{"x":null,"y":null},"b":{"x":null,"y":null}};
+  hl.a.x = halfLine.a.x - staging_loc.x + width/2.0;
+  hl.a.y = halfLine.a.y - staging_loc.y + height/2.0;
+  hl.b.x = halfLine.b.x - staging_loc.x + width/2.0;
+  hl.b.y = halfLine.b.y - staging_loc.y + height/2.0;
+  //console.log("hl",hl);
+  var delays3 = setDelaysByHalfLine(hl,goodp,badp,tilePositions);
+  //console.log("half delays",delays3);
+  var delays = [];
+  for(var i = 0; i < delays1.length; i++) {
+    // slowest delay used
+    //var delay = Math.max(delays1[i],delays2[i],delays3[i]);
+    var delay = Math.max(delays1[i],delays2[i]); // with -1 placeholders
+    if(delay < 0) {
+      //console.log("delay less than zero",delay);
+      delay = delays3[i];
+    }
+    delays.push(delay);
+    //console.log(delays1[i],delays2[i],delays3[i],delay);
+  }
+
+  // append tiles with delays
+  for(var i = 0; i < tilePositions.length; i++) {
+    appendTileWithDelay(tilePositions[i],delays[i]);
+  }
+};
+
+function appendTileWithDelay(d,delay_length) {
+  var now = Date.now();
+  tilesAdded.push(d);
+  setTimeout(function() {appendTile(d,now,delay_length);},delay_length);
+};
+
+function appendTile(d,start_time,delay_length) {
+  d.x = d.pxpos-staging_loc.x+width/2.0;
+  d.y = d.pypos-staging_loc.y+height/2.0;
+  //console.log(d);
+  tileContainer.selectAll(".dummy")
+    .data([d])
+    .enter().append("svg:image")
+      //.attr("xlink:href", "../static/img/test_images/"+d.sample)
+      //.attr("xlink:href", "../adjusted_birds/"+d.sample)
+      //.attr("xlink:href", server_url+"images/500-375/"+d.sample)
+      //.attr("xlink:href", "{{url_for('serveImage',collection='500-375')}}?image_name="+d.sample)
+      //.attr("xlink:href", imagesCache["{{url_for('serveImage',collection='500-375')}}?image_name="+d.sample].src)
+      .attr("xlink:href", imagesCache["{{url_for('serveImage',collection='balanced-500-375')}}?image_name="+d.sample].src)
+      .attr("x", d.x)
+      .attr("y", d.y)
+      .attr("width", imwidth)
+      .attr("height",imheight)
+      .classed("tiles", true);
+  var end_time = Date.now();
+  logTileAddition(d,delay_length,start_time,end_time);
+
+  // remove this tile from the tilesAdded list
+  var i = 0;
+  for(; i < tilesAdded.length; i++) {
+    if(tilesAdded[i].pxpos ===d.pxpos && tilesAdded[i].pypos === d.pypos) {
+      break;
+    }
+  }
+  if(i < tilesAdded.length) {
+    tilesAdded.splice(i,1);
+  }
+  //console.log(d,start_time,end_time,end_time-start_time,delay_length);
+  tileContainer.selectAll(".foundText").moveToFront();
+};
+
+function setDelaysByPathLines(goodLine,badLine,goodp,badp,tilePositions) {
+  var delays = [];
+  var goodSwath = [];
+  goodSwath.push(goodLine);
+  if((goodp.x - width/2.0) > 0) { // goodp to the left
+    //console.log("adding good to the right");
+    goodSwath.push({"a":{"x":goodLine.a.x+imwidth/2.0-1,"y":goodLine.a.y},"b":{"x":goodLine.b.x+imwidth/2.0-1,"y":goodLine.b.y}});
+  } else {
+    //console.log("adding good to the left");
+    goodSwath.push({"a":{"x":goodLine.a.x-imwidth/2.0,"y":goodLine.a.y},"b":{"x":goodLine.b.x-imwidth/2.0+1,"y":goodLine.b.y}});
+  }
+  var badSwath = [];
+  badSwath.push(badLine);
+  if((badp.x - width/2.0) > 0) { // goodp to the left
+    //console.log("adding bad to the right");
+    badSwath.push({"a":{"x":badLine.a.x+imwidth/2.0-1,"y":badLine.a.y},"b":{"x":badLine.b.x+imwidth/2.0-1,"y":badLine.b.y}});
+  } else {
+    //console.log("adding bad to the left");
+    badSwath.push({"a":{"x":badLine.a.x-imwidth/2.0+1,"y":badLine.a.y},"b":{"x":badLine.b.x-imwidth/2.0+1,"y":badLine.b.y}});
+  }
+  for(var i = 0; i < tilePositions.length; i++) {
+    var pos = tilePositions[i];
+    var outcome;
+    //if(lineIntersectsTile(goodLine.a,goodLine.b,pos,imwidth,imheight)) {
+    if(tileIntersectsLines(goodSwath,pos,imwidth,imheight)) {
+      outcome = 1;
+    } else {
+      outcome = 0;
+    }
+    //if(lineIntersectsTile(badLine.a,badLine.b,pos,imwidth,imheight)) {
+    if(tileIntersectsLines(badSwath,pos,imwidth,imheight)) {
+      //console.log("tile intersects with badSwath");
+      if(outcome > 0) { // paths intersect, check distances
+        var comp = compareABDist(pos,goodp,badp);
+        //console.log("pos",pos,"goodp",goodp,"badp",badp);
+        if(comp < 0) { // goodp is closer
+          //console.log("badp overlaps, goodp is closer",pos);
+          outcome = 1;
+        } else if (comp > 0) { // badp is closer
+          //console.log("badp overlaps, badp is closer",pos);
+          outcome = -1;
+        } else { // equidistant
+          //console.log("badp and goodp equidistant");
+          outcome = 0;
+        }
+      } else {
+        //console.log("along badp path",pos);
+        outcome = -1;
+      }
+    }
+    if(outcome > 0) {
+      delays.push(fast);
+    } else if(outcome < 0) {
+      delays.push(slow);
+    } else {
+      //delays.push(med);
+      //delays.push(fast);
+      delays.push(-1.0);
+    }
+  }
+  //logDelayPaths([goodLine],[badLine]);
+  logDelayPaths(goodSwath,badSwath);
+  return delays;
+};
+
+// does this tile intersect any of the given lines?
+function tileIntersectsLines(lines,p,w,h) {
+  for(var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if(lineIntersectsTile(line.a,line.b,p,w,h)) {
+      return true;
+    }
+  }
+  return false;
+};
+
+// tells you whether the given line segment intersects with the given tile
+function lineIntersectsTile(l1,l2,p,w,h) {
+  //console.log(l1,l2,[p,{"x":p.x+w,"y":p.y+h},{"x":p.x,"y":p.y+h},{"x":p.x+w,"y":p.y}]);
+  return lineIntersectsPolygon(l1,l2,[p,{"x":p.x+w,"y":p.y+h},{"x":p.x,"y":p.y+h},{"x":p.x+w,"y":p.y}]);
+};
+
+// tells you whether the given line segment intersects with the given polygon.
+function lineIntersectsPolygon(l1,l2,poly) {
+  var F = function(x,y) { return (l2.y-l1.y)*x + (l1.x-l2.x)*y+(l2.x*l1.y-l1.x*l2.y);};
+  var gtz = 0, ltz = 0, eqz = 0;
+  var minx = null,maxx = null, miny = null, maxy = null;
+  for(var i = 0; i < poly.length; i++) {
+    var p = poly[i];
+    if(!minx || minx > p.x) minx = p.x;
+    if(!maxx || maxx < p.x) maxx = p.x;
+    if(!miny || miny > p.y) miny = p.y;
+    if(!maxy || maxy < p.y) maxy = p.y;
+
+    var val = F(p.x,p.y);
+    if(val > 0) {
+      gtz++;
+    } else if(val < 0) {
+      ltz++;
+    } else {
+      eqz++;
+    }
+  }
+
+  //console.log(gtz,ltz,eqz,minx,maxx,miny,maxy);
+  //console.log("intersects line?",l1,l2,poly,(gtz > 0 && ltz > 0 || gtz > 0 && eqz > 0 || ltz > 0 && eqz > 0) &&
+  //  !(l1.x < minx && l2.x < minx) && !(l1.x > maxx && l2.x > maxx)
+  //  && !(l1.y < miny && l2.y < miny) && !(l1.y > maxy && l2.y > maxy));
+  return (gtz > 0 && ltz > 0 || gtz > 0 && eqz > 0 || ltz > 0 && eqz > 0) &&
+    !(l1.x < minx && l2.x < minx) && !(l1.x > maxx && l2.x > maxx)
+    && !(l1.y < miny && l2.y < miny) && !(l1.y > maxy && l2.y > maxy);
+};
+
+function setDelaysByHalfLine(hl,goodp,badp,tilePositions) {
+  var delays = [];
+  for(var i = 0; i < tilePositions.length; i++) {
+    var pos = tilePositions[i];
+    var outcome;
+    // on the same side as the good target
+    if(pointTileSameSideOfLine(hl.a,hl.b,goodp,pos,imwidth,imheight)) {
+      //console.log("good side",pos);
+      outcome = 1;
+    } else if(pointTileSameSideOfLine(hl.a,hl.b,badp,pos,imwidth,imheight)) { 
+      //console.log("bad side",pos);
+      outcome = -1;
+    } else { // on the line
+      //console.log("neutral",pos);
+      outcome = 0;
+    }
+    if(outcome > 0) {
+      //delays.push(fast);
+      delays.push(quick);
+    } else if(outcome < 0) {
+      delays.push(med); // was originally slow
+    } else {
+      delays.push(quick); // was originally med
+    }
+  }
+  return delays;
+};
+
+// tells you whether the given target point and tile are on the same side of the given line
+// (tiles that intersect the line return false)
+function pointTileSameSideOfLine(l1,l2,t,p,w,h) {
+  return pointPolySameSideOfLine(l1,l2,t,[p,{"x":p.x+w,"y":p.y+h},{"x":p.x,"y":p.y+h},{"x":p.x+w,"y":p.y}]);
+};
+
+// tells you whether the given line segment intersects with the given polygon.
+function pointPolySameSideOfLine(l1,l2,t,poly) {
+  var F = function(x,y) { return (l2.y-l1.y)*x + (l1.x-l2.x)*y+(l2.x*l1.y-l1.x*l2.y);};
+  var gtzt = 0, ltzt = 0, eqzt = 0;
+  var gtz = 0, ltz = 0, eqz = 0;
+  var val = F(t.x,t.y);
+  if(val > 0) {
+    gtzt++;
+  } else if(val < 0) {
+    ltzt++;
+  } else {
+    eqzt++; // should never happen!
+    console.log("reached invalid state");
+  }
+  var minx = null,maxx = null, miny = null, maxy = null;
+  for(var i = 0; i < poly.length; i++) {
+    var p = poly[i];
+    if(!minx || minx > p.x) minx = p.x;
+    if(!maxx || maxx < p.x) maxx = p.x;
+    if(!miny || miny > p.y) miny = p.y;
+    if(!maxy || maxy < p.y) maxy = p.y;
+
+    val = F(p.x,p.y);
+    if(val > 0) {
+      gtz++;
+    } else if(val < 0) {
+      ltz++;
+    } else {
+      eqz++;
+    }
+  }
+
+  // all points of the polygon are on the same side as the target
+  // any points that are not on the same side means that the polygon intersects the line
+  return (gtzt > 0) && (gtz === poly.length)
+    || (ltzt > 0) && (ltz === poly.length)
+};
+
+
+function setDelaysByBox(goodBox,badBox,tilePositions) {
+  var delays = [];
+  for(var i = 0; i < tilePositions.length; i++) {
+    var pos = tilePositions[i];
+    var outcome;
+    if(tileWithinBox(goodBox.minp,goodBox.maxp,pos,imwidth,imheight)) {
+      outcome = 1;
+    } else {
+      //console.log("neutral",pos);
+      outcome = 0;
+    }
+    //console.log(badBox);
+    // bad box always wins... but good and bad boxes should never overlap
+    if(tileWithinBox(badBox.minp,badBox.maxp,pos,imwidth,imheight)) {
+      //console.log("bad",pos);
+      outcome = -1;
+    }
+    if(outcome > 0) {
+      delays.push(fast);
+    } else if(outcome < 0) {
+      delays.push(slow);
+    } else {
+      //delays.push(quick);
+      delays.push(-1.0);
+    }
+  }
+  return delays;
+};
+
+function tileWithinBox(minp,maxp,p,w,h) {
+  return polygonWithinBox(minp,maxp,[p,{"x":p.x+w,"y":p.y+h},{"x":p.x,"y":p.y+h},{"x":p.x+w,"y":p.y}]);
+};
+
+// minp = minimum x and y values for the box
+// maxp = maximum x and y values for the box
+// poly = all outside points for the polygon
+function polygonWithinBox(minp,maxp,poly) {
+  for(var i = 0; i < poly.length; i++) {
+    var p = poly[i];
+    if(p.x >= minp.x && p.y >= minp.y && p.x <= maxp.x && p.y <= maxp.y) {
+      return true;
+    }
+  }
+  return false;
+};
+
+//console.log("intersect?",lineIntersectsPolygon({"x":0,"y":0},{"x":10,"y":10},[{"x":0,"y":3},{"x":3,"y":3},{"x":0,"y":6},{"x":3,"y":6}]));
+//console.log("intersect?",lineIntersectsPolygon({"x":0,"y":0},{"x":12,"y":12},[{"x":10,"y":11},{"x":12,"y":11},{"x":10,"y":13},{"x":12,"y":13}]));
+//console.log("intersect?",lineIntersectsPolygon({"x":0,"y":0},{"x":10,"y":10},[{"x":10,"y":11},{"x":12,"y":11},{"x":10,"y":13},{"x":12,"y":13}]));
+//console.log("intersect?",lineIntersectsPolygon({"x":5,"y":5},{"x":10,"y":10},[{"x":0,"y":0},{"x":2,"y":2},{"x":0,"y":2},{"x":2,"y":0}]));
+//console.log("intersect?",lineIntersectsPolygon({"x":0,"y":5},{"x":5,"y":0},[{"x":4,"y":2},{"x":6,"y":2},{"x":4,"y":4},{"x":6,"y":4}]));
+
+// looks at a center point c, and two targets a and b
+// if distance to a from c is smaller than distance to b from c, returns a negative number
+// if distance to b from c is smaller, returns a positive number
+// if distances are equal, returns zero
+function compareABDist(c,a,b) {
+  var dista = dist(c,a);
+  var distb = dist(c,b);
+
+  return dista-distb;
+};
+
+// calculates distance between 2 points
+function dist(p1,p2) {
+  return Math.sqrt(Math.pow(p1.x-p2.x,2)+Math.pow(p1.y-p2.y,2));
+};
+
+
+function getTimestamp() {
+  return new Date().getTime()
+};
+
+function logDragStart() {
+  var coords = d3.mouse(overlay.node());
+  //var newEntry = {"userid":userid,"recordType":"dragStart","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp(),
+  var newEntry = {"recordType":"dragStart","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp(),
+    "stagingLoc":{"x":staging_loc.x,"y":staging_loc.y}
+  };
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logDragEnd() {
+  var coords = d3.mouse(overlay.node());
+  //var newEntry = {"userid":userid,"recordType":"dragEnd","mousex":coords[0],"mousey":coords[1],
+  var newEntry = {"recordType":"dragEnd","mousex":coords[0],"mousey":coords[1],
+    "timestamp":getTimestamp(),"prevDragStart":{"x":prevDragStart.x,"y":prevDragStart.y},
+    "prevStagingLoc":{"x":prevStagingLoc.x,"y":prevStagingLoc.y},
+    "stagingLoc":{"x":staging_loc.x,"y":staging_loc.y}
+  };
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logDragMid() {
+  var coords = d3.mouse(overlay.node());
+  //var newEntry = {"userid":userid,"recordType":"dragMid","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp()};
+  var newEntry = {"recordType":"dragMid","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp()};
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logMousePosition() {
+  var coords = d3.mouse(overlay.node());
+  //var newEntry = {"userid":userid,"recordType":"mousePosition","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp()};
+  var newEntry = {"recordType":"mousePosition","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp()};
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logStagingLoc() {
+  //var newEntry = {"userid":userid,"recordType":"visPosition","svgwidth":width,"svgheight":height,
+  var newEntry = {"recordType":"visPosition",
+    "stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},"timestamp":getTimestamp()
+    //"imwidth":imwidth,"imheight":imheight,
+  };
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logDelayPaths(goodLines,badLines) {
+  //var newEntry = {"userid":userid,"recordType":"delayPaths","svgwidth":width,"svgheight":height,
+  //  "imwidth":imwidth,"imheight":imheight,
+  var newEntry = {"recordType":"delayPaths",
+    "stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},"timestamp":getTimestamp(),
+    "goodLines":goodLines,
+    "badLines":badLines,
+  };
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logTargetsFoundList() {
+  var newEntry = {"recordType":"targetsFoundList","targetsFoundList":targetsFoundList,"targetsFound":targetsFound,
+    "timestamp":getTimestamp()};
+  log.push(newEntry);
+};
+
+function logFoundButtonClick() {
+  //var newEntry = {"userid":userid,"recordType":"foundButtonClick","svgwidth":width,"svgheight":height,"stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    //"imwidth":imwidth,"imheight":imheight,
+  var newEntry = {"recordType":"foundButtonClick","stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    "timestamp":getTimestamp()};
+  log.push(newEntry);
+};
+
+function logStudyEndButtonClick() {
+  //var newEntry = {"userid":userid,"recordType":"studyEndButtonClick","svgwidth":width,"svgheight":height,"stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+  //  "imwidth":imwidth,"imheight":imheight,
+  var newEntry = {"recordType":"studyEndButtonClick","stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    "timestamp":getTimestamp()};
+  log.push(newEntry);
+};
+
+function logAnswerMouseClick() {
+  //var newEntry = {"userid":userid,"recordType":"answerMouseClick","svgwidth":width,"svgheight":height,"stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+  var newEntry = {"recordType":"answerMouseClick","stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    "mouse_coords":d3.mouse(overlay.node()), // provides coordinates with respect to the overlay object
+    //"imwidth":imwidth,"imheight":imheight,
+    "timestamp":getTimestamp()};
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logTileAddition(toAdd,delay,startTime,endTime) {
+  if(toAdd.length === 0) return;
+  // everything you need to reverse-engineer the original position:
+  // orig.x = curr.x + staging.x - width/2.0
+  // orig.y = curr.y + staging.y - height/2.0
+  //var newEntry = {"userid":userid,"recordType":"tileAddition","svgwidth":width,"svgheight":height,"stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+  //  "toAdd":toAdd,"timestamp":getTimestamp(),"delay":delay,"startTime":startTime,"endTime":endTime,"imwidth":imwidth,"imheight":imheight};
+  var newEntry = {"recordType":"tileAddition","stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    "toAdd":toAdd,"timestamp":getTimestamp(),"delay":delay,"startTime":startTime,"endTime":endTime};
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logTileRemoval(toRemove) {
+  if(toRemove.length === 0) return;
+  // everything you need to reverse-engineer the original position:
+  // orig.x = curr.x + staging.x - width/2.0
+  // orig.y = curr.y + staging.y - height/2.0
+  //var newEntry = {"userid":userid,"recordType":"tileRemoval","svgwidth":width,"svgheight":height,"stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+  var newEntry = {"recordType":"tileRemoval","stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    "toRemove":toRemove,"timestamp":getTimestamp()};
+    //"imwidth":imwidth,"imheight":imheight};
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function isNumber(n) {
+  return !isNaN(parseFloat(n)) && isFinite(n);
+};
+
+// function written to replace the $.param function from jQuery.
+// I don't need a fancy params building function, so I chose to eliminate
+// the jQuery dependency.
+// shallow parsing of parameters in the dictionary passed as input (i.e., dat)
+// shallow = absolutely no nested parsing, so don't pass anything crazy!
+function buildParams(dat) {
+  var parsedParams = [];
+  for(var key in dat) {
+    var val = dat[key];
+    if((val == null) || (typeof(val) === 'undefined')) {
+      val = "";
+    }
+    var p = encodeURIComponent(key) + "=";
+    if((typeof val === 'string') || isNumber(val) || (typeof val === 'boolean')) {
+      p += encodeURIComponent(val);
+    } else { // is some object
+      //console.log("is object");
+      p += encodeURIComponent(JSON.stringify(val));
+    }
+    //parsedParams.push(encodeURIComponent(key) + "=" + encodeURIComponent(val));
+    //console.log(["param",key,JSON.stringify(val),encodeURIComponent(JSON.stringify(val))]);
+    parsedParams.push(p);
+  }
+  return parsedParams.join("&");
+};
+
+function sendRequestHelper(dat,requestType,responseType,url,callback,errorCallback) {
+  var paramsString = buildParams(dat);
+  var newUrl = (requestType==="GET") ? url + "?" + paramsString : url;
+  //console.log(newUrl);
+  var oReq = new XMLHttpRequest();
+  oReq.open(requestType,newUrl, true); // async = true
+  oReq.responseType = responseType;
+  oReq.onload = function (oEvent) {
+    if(oReq.readyState == 4) { // state = DONE
+      var reqStatus = oReq.status;
+      if(reqStatus == 200) { // status = OK
+        var data = oReq.response;
+        if(responseType === "") { // assume we want the DOM string instead
+          data = oReq.responseText;
+        }
+        callback && callback(data);
+      } else {
+        if(errorCallback) { // if error handling is provided
+          errorCallback(reqStatus);
+        } else { // just call the callback anyway
+          callback && callback(null);
+        }
+      }
+    }
+  };
+
+  if(requestType==="GET") {
+    oReq.send();
+  } else { // post method
+    oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    oReq.send(paramsString);
+  }
+};
+
+function sendGetRequestHelper(dat,responseType,url,callback,errorCallback) {
+  sendRequestHelper(dat,"GET",responseType,url,callback,errorCallback);
+};
+function sendPostRequestHelper(dat,responseType,url,callback,errorCallback) {
+  sendRequestHelper(dat,"POST",responseType,url,callback,errorCallback);
+};
+function sendGetRequest(dat,url,callback) {
+  sendGetRequestHelper(dat,"",url,callback);
+};
+function sendPostRequest(dat,url,callback) {
+  sendPostRequestHelper(dat,"",url,callback);
+};
+
+function init() {
+  var parameters = {
+    "recordType":"initialState",
+    "userid":userid,
+    "delays":{
+      "fast":fast,
+      "quick":quick,
+      "med":med,
+      "slow":slow
+    },
+    "imwidth":imwidth,
+    "imheight":imheight,
+    "svgwidth":width,
+    "svgheight":height,
+    "starting_pos":starting_pos,
+    "center_loc":{"x":center_loc.x,"y":center_loc.y}, // starting location
+    "good_pos":good_pos,
+    "good_loc":good_loc,
+    "bad_pos":bad_pos,
+    "bad_loc":bad_loc,
+    "boxrad":boxrad,
+    "halfLine":halfLine,
+    "image_positions":image_positions, // the images that were in the collage, and their positions
+    "timestamp":getTimestamp(),
+    "pixelOrdersX":pixelOrdersX,
+    "pixelOrdersY":pixelOrdersY,
+  };
+  log.push(parameters);// log the starting state
+
+  //console.log(staging_loc);
+  //console.log(0-staging_loc.x+width/2.0);
+  //console.log("y",0-staging_loc.y+height/2.0);
+  //console.log(imwidth*pixelOrdersX.length);
+  //console.log(imheight*pixelOrdersY[0].length);
+
+  svg.insert("rect",":first-child")
+    .attr("x",0-staging_loc.x+width/2.0)
+    .attr("y",0-staging_loc.y+height/2.0)
+    .attr("width",imwidth*pixelOrdersX.length)
+    .attr("height",imheight*pixelOrdersY[0].length)
+    .attr("fill","#bfbfbf")
+    .attr("stroke","black")
+    .attr("stroke-width",3)
+    .attr("stroke-dasharray","5,10,5")
+    .attr("id","background-rect");
+
+  svg.selectAll(".loadingText").remove();
+  var cgl = {};
+  cgl.x = good_loc.x - staging_loc.x + width/2.0;
+  cgl.y = good_loc.y - staging_loc.y + height/2.0;
+  var bgl = {};
+  bgl.x = bad_loc.x - staging_loc.x + width/2.0;
+  bgl.y = bad_loc.y - staging_loc.y + height/2.0;
+  appendTilesUsingTargets(cgl,bgl,positions);
+  timer_interval = setInterval(timer, 1000); // Time in milliseconds
+/*
+  tileContainer.selectAll(".tiles")
+    .data(positions)
+    .enter().append("svg:image")
+      //.attr("xlink:href", function(d) { return "../adjusted_birds/"+d.sample})
+      //.attr("xlink:href", function(d) { return "{{url_for('serveImage',collection='500-375')}}?image_name="+d.sample})
+      //.attr("xlink:href", function(d) { return "../static/img/test_images/"+d.sample})
+      //.attr("xlink:href", function(d) { return imagesCache["{{url_for('serveImage',collection='500-375')}}?image_name="+d.sample].src;})
+      .attr("xlink:href", function(d) { return imagesCache["{{url_for('serveImage',collection='balanced-500-375')}}?image_name="+d.sample].src;})
+      .attr("x", function(d) { return d.x; })
+      .attr("y", function(d) { return d.y; })
+      .attr("width", imwidth)
+      .attr("height",imheight)
+      .classed("tiles", true);
+*/
+
+/*
+  svg.selectAll("circle")
+    .data([good_loc,bad_loc])
+    .enter().append("circle")
+      .attr("cx", function(d) { return d.x; })
+      .attr("cy", function(d) { return d.y; })
+      .attr("r", r)
+      .attr("fill", "red")
+      .classed("target",true);
+
+  svg.append("circle")
+    .attr("cx",center_loc.x)
+    .attr("cy",center_loc.y)
+    .attr("fill","green")
+    .attr("r",r)
+    .classed("center",true);
+
+  svg.append("circle")
+    .attr("cx",center_loc.x)
+    .attr("cy",center_loc.y)
+    .attr("fill","blue")
+    .attr("r",r)
+    .classed("staging",true);
+  */
+};
+
+function timer(){
+  // console.log(document.getElementById("id"))
+  if(targetsFoundList.length > 0) {
+    clearInterval(timer_interval);
+    return;
+  }
+  timer_counter++;
+    
+  var txt = formatTime(timer_counter);
+  document.getElementById("timer").innerText = txt;
+};
+
+
+function formatTime(c){ // should be one function... but i don't have the internet..
+   var min = Math.floor(c / 60);
+   var sec = c % 60;
+   // console.log(document.getElementsByName("id"))
+   return min + ' min ' + sec + ' seconds';
+};
+
+console.log("this is the delays case");
+positions = traverseImagePositions(sample_pos);
+halfLine = computeHalfLine(good_loc,bad_loc);
+//console.log(halfLine);
+
+</script>

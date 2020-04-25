@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<head>
+<title>Spatial Ability Test</title>
+<script src="{{url_for('static',filename='js/d3.v3.min.js')}}" charset="utf-8"></script>
+<link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/stylesheet.css')}}" />
+</head>
+<body>
+
+<div style = "margin-left:-2em">
+<h1> Data Visualization Study </h1>
+<h2 > Section 4: Spatial Ability Test (Part 2/2)</h2>
+<p> Please select the figure that shows the position of the holes when the paper is completely unfolded.</p>
+<!--<p> You have $0.02 bonus on each correct answer.</p>-->
+<p id="spatialTimer_2">You have <b> 3 min 00 seconds </b> </p>
+</div>
+
+<form id = "spatial_form2">
+
+<table id="spatialtable" style = "margin-left:-5em"></table>
+
+<p align = "right"> <button style="font-size:16px; width: 150px;" type= "button" id="continue1"  value = "Continue" onclick="handleSubmit()">Continue</button>
+</p>
+<input type = "hidden" id = "sp2_count" name = "sp2_count"/>
+<input type = "hidden" id = "sp2_answered" name = "sp2_answered"/>
+<input type = "hidden" id = "sp2_time" name = "sp2_time"/>
+<input type = "hidden" id = "sp2_grade" name = "sp2_grade"/>
+<input type= "hidden" id = "id" name = "id" value = "DEBUGGING" /> 
+<input type="hidden" name = "image_id" value = "DEBUGGING" />
+</form>
+
+</div>
+</body>
+<script
+  src="https://code.jquery.com/jquery-3.1.1.js"
+  integrity="sha256-16cdPddA6VdVInumRGo6IbivbERE8p7CQR3HzTBuELA="
+  crossorigin="anonymous"></script>
+<script> 
+  var data = {},
+      answers = {};
+  var count = 0;
+  var counter = 180;
+(function() {
+
+  var rows = d3.select('#spatialtable').selectAll('tr')
+  .data( d3.range(20, 40) )
+  .enter().append('tr');
+
+  var even = rows.filter(function(d, i) { return i % 2 === 0; }).selectAll('td')
+    .data(d3.range(0,8) )
+    .enter().append('td')
+    .attr('align', 'center')
+    .text('even');
+
+  var odd = rows.filter(function(d, i) { return i % 2 === 1; }).selectAll('td')
+    .data( d3.range(0,8) )
+    .enter().append('td')
+    .attr('align', 'center')
+    .text('odd');
+  
+  init();
+  
+  function init(){
+  	d3.json("{{url_for('getSpatialAnswers')}}", function(err, d) {
+      answers = d.answers;
+     });
+  
+  	display();
+  }
+  
+
+	function display(){
+		even.filter(function(d, i) { return i === 0; })
+    .text(function() { return getIdx(this)+". "; });
+		even.filter(function(d, i) { return i === 1; })
+		.html( function() {
+		  return "<img src=\"{{url_for('static',filename='img/paper_folding/')}}"+getIdx(this)+'.png">';
+		})
+		even.filter(function(d, i) { return i === 2; })
+		  .html("<img src='{{url_for('static',filename='img/paper_folding/divider.png')}}'\>");
+		even.filter(function(d, i) { return i === 3; })
+		.html( function() {
+		  return "<img src=\"{{url_for('static',filename='img/paper_folding/')}}"+getIdx(this)+'a.png">';
+		})
+		even.filter(function(d, i) { return i === 4; })
+		.html( function() {
+		  return "<img src=\"{{url_for('static',filename='img/paper_folding/')}}"+getIdx(this)+'b.png">';
+		})
+		even.filter(function(d, i) { return i === 5; })
+		.html( function() {
+		  return "<img src=\"{{url_for('static',filename='img/paper_folding/')}}"+getIdx(this)+'c.png">';
+		})
+		even.filter(function(d, i) { return i === 6; })
+		.html( function() {
+		  return "<img src=\"{{url_for('static',filename='img/paper_folding/')}}"+getIdx(this)+'d.png">';
+		})
+		even.filter(function(d, i) { return i === 7; })
+		.html( function() {
+		  return "<img src=\"{{url_for('static',filename='img/paper_folding/')}}"+getIdx(this)+'e.png">';
+		})
+
+
+		odd.filter(function(d, i) { return i === 0 || i === 1 || i === 2; })
+			.text('');
+		odd.filter(function(d, i) { return i === 3; })
+		.html( function() {
+			return '<Input class = "item" type="radio" name="'+getIdx(this)+'" value="a">';
+		})
+		odd.filter(function(d, i) { return i === 4; })
+		.html( function() {
+			return '<Input class = "item" type="radio" name="'+getIdx(this)+'" value="b">';
+		})
+		odd.filter(function(d, i) { return i === 5; })
+		.html( function() {
+			return '<Input class = "item" type="radio" name="'+getIdx(this)+'" value="c">';
+		})
+		odd.filter(function(d, i) { return i === 6; })
+		.html( function() {
+			return '<Input class = "item" type="radio" name="'+getIdx(this)+'" value="d">';
+		})
+		odd.filter(function(d, i) { return i === 7; })
+		.html( function() {
+			return '<Input class = "item" type="radio" name="'+getIdx(this)+'" value="e">';
+		})
+
+		var prev = {}
+		d3.selectAll('.item')
+			.on('click', function() { 
+				if (prev[this.name]){
+					if(prev[this.name] == this.value){
+						this.checked = false; 
+						prev[this.name] = null;
+						data['spatial2_'+d3.select(this).attr('name')]  = null;	
+					}else{
+						prev[this.name] = this.value;
+						data['spatial2_'+d3.select(this).attr('name')] = this.value; 
+					}
+				}else{
+					prev[this.name] = this.value;
+					data['spatial2_'+d3.select(this).attr('name')] = this.value; 
+				}
+		});
+	}
+
+  function getParent(x) {
+    return d3.select(d3.select(x).node().parentNode).data() ;
+  }
+
+  function getIdx(x) {
+    return Math.floor( (getParent(x) / 2) + 1 );
+  }
+}());
+
+  
+function grade(){
+  	count = 0;
+  	d3.range(11,21).forEach(function(i){
+  		if(data['spatial2_' + i ] && data['spatial2_' + i ] == answers[i] ){
+  			count += 1;
+  		}
+  	});  	
+  }
+
+
+function timer(){
+    if(counter == 0){
+       d3.select("#spatialtable")
+         .remove() // stupid tricks!
+       d3.select("#spatialTimer_2")
+         .html("You have <b> 0 min 0 seconds </b>. Time out. Please click Continue. ")
+       return;
+    }
+    counter--;
+    var txt = "You have <b>" + formatTime(counter) + "</b>";
+    
+    d3.select("#spatialTimer_2")
+     .html(txt)
+  }
+
+setInterval(timer, 1000); // Time in milliseconds
+
+function formatTime(c){ // should be one function... but i don't have the internet..
+   var min = Math.floor(c / 60);
+   var sec = c % 60;
+   return min + ' min ' + sec + ' seconds';
+}
+
+function setInfo(){
+	grade();
+	document.getElementById('sp2_time').value = 180 - counter;
+	document.getElementById('sp2_count').value = count;
+	document.getElementById('sp2_answered').value = Object.keys(data).length;
+    document.getElementById('sp2_grade').value = JSON.stringify(data);
+    if(counter > 0) {
+      if(confirm('You still have time!  \nTo keep answering, please click Cancel. \nClick OK to move on to the next page!')){
+        return true;
+      }else{
+      	return false;
+      }
+  } else {
+    return true; // they are out of time
+  }
+};
+
+function handleSubmit(){
+  if(setInfo()) {
+	  $('#id').val(sessionStorage.id);
+	  var values = $('#spatial_form2').serialize();
+	  $.ajax({
+		  url:"{{url_for('handleSpatialSecondForm')}}",
+		  type: "post",
+		  data: values,
+		  success: function(data){
+			  window.location = "{{url_for('renderPostTest')}}";
+		  },
+      error: function(st){
+			  window.location = "{{url_for('renderPostTest')}}";
+      }
+	  });
+  }
+}
+</script>

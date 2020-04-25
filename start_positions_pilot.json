@@ -1,0 +1,29 @@
+[
+	{
+		"start":{"x":9, "y":9},
+		"goodp":{"x":17, "y":16},
+		"badp":{"x":1, "y":2},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":0, "y":10},
+		"goodp":{"x":12, "y":3},
+		"badp":{"x":12, "y":17},
+		"difficulty":"med"
+	},
+
+  {
+		"start":{"x":10, "y":0},
+		"goodp":{"x":19, "y":14},
+		"badp":{"x":1, "y":14},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":10, "y":19},
+		"goodp":{"x":1, "y":0},
+		"badp":	{"x":19, "y":0},
+		"difficulty":"med"
+	}
+]

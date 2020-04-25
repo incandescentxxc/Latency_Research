@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<head>
+<title>Experiment Instructions -- Preview</title>
+
+<link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/stylesheet.css')}}" />
+
+<style type="text/css">
+.instrucStyle {
+}
+body{
+  font-family: Verdana;
+}
+</style>
+
+</head>
+<body>
+
+<h1>WARNING THIS IS ONLY A PREVIEW PAGE. THIS IS NOT THE REAL STUDY!</h1>
+<h1>Data Visualization Study -- Preview</h1>
+
+<h2>Section 2: Image Puzzle Task</h2>
+
+<p>
+In the next portion of the study, you will view an interface which contains
+several parts: a square window showing a portion of a collage of bird images; a
+description of a picture to find within the collage (or a "target picture");
+and two function buttons called "FOUND" and "FINISH".
+</p>
+
+<p>
+There are two copies of the target picture within the collage.
+The main task is to <b>find one copy of the target picture</b> within
+the collage. You can <b>drag within the visualization window</b> to see more of
+the image collage. There may be a delay before some images appear in the
+collage.
+</p>
+
+<p>
+When you find a copy of the target picture, move the target picture to the center
+of the visualization window, and click on the "FOUND" button. The web page will
+pop out a window to confirm whether you have made progress in the task or not.
+The target picture will be clearly marked as found after the confirmation. You
+can stop finding by clicking the "FINISH" button. Once you confirm to finish, you
+will not be able to interact with the collage anymore.
+</p>
+
+<!--
+<p>
+Below is a diagram that describes how the images are positioned within the collage (the diagram will also be displayed on the next page). 
+This diagram is intended to help you to find the target images in an easier
+and faster way, by helping you identify which zones you have explored and
+which ones you have not.
+The collage has six zones, and all of the images in each zone have the same
+background color. As shown by the diagram below (from left to right), there are 2 zones of images
+with a green background, 2 zones of images with a gray background, 1 zone of
+images with a brown background and 1 other zone of images with a gray
+background. <b>Your starting position will be in the center
+of the color map.</b>
+</p>
+
+<p>
+
+</p>
+<img src="{{url_for('static',filename='img/main_cluster_map.jpg')}}" alt="target picture locations" height="350">
+
+<p>
+-->
+When you are ready to start, please press "Continue" below.
+</p>
+
+<form method = "post" action="{{url_for('renderPuzzlePreview')}}">
+  <p>&nbsp;</p>
+    <p align = "right">
+      <input type= "hidden" name = "id" id = "id" value = "DEBUGGING" /> 
+      <input type="hidden" name = "image_id" value = "DEBUGGING" />
+      <input type= "submit"  style="width: 150px;margin-left:160px;font-size:16px;" id= "Accept" value = "Continue">
+    </p>
+
+</form>
+
+<script type="text/javascript">
+  // store waldo data
+  //sessionStorage.id = "{{guid}}";
+  document.getElementById("id").value = "test";
+</script>

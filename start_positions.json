@@ -1,0 +1,118 @@
+[
+	{
+		"start":{"x":10, "y":10},
+		"goodp":{"x":19, "y":0},
+		"badp":	{"x":0, "y":19},
+		"difficulty":"med"
+	},
+	{
+		"start":{"x":10, "y":10},
+		"goodp":{"x":0, "y":19},
+		"badp":	{"x":19, "y":0},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":10, "y":10},
+		"goodp":{"x":0, "y":0},
+		"badp":	{"x":19, "y":19},
+		"difficulty":"med"
+	},
+	{
+		"start":{"x":10, "y":10},
+		"goodp":	{"x":19, "y":19},
+		"badp":{"x":0, "y":0},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":0, "y":0},
+		"goodp":{"x":10, "y":19},
+		"badp":	{"x":19, "y":10},
+		"difficulty":"med"
+	},
+	{
+		"start":{"x":0, "y":0},
+		"goodp":	{"x":19, "y":10},
+		"badp":{"x":10, "y":19},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":19, "y":19},
+		"goodp":{"x":0, "y":10},
+		"badp":	{"x":10, "y":0},
+		"difficulty":"med"
+	},
+	{
+		"start":{"x":19, "y":19},
+		"goodp":{"x":10, "y":0},
+		"badp":{"x":0, "y":10},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":0, "y":10},
+		"goodp":{"x":15, "y":19},
+		"badp":	{"x":15, "y":0},
+		"difficulty":"med"
+	},
+	{
+		"start":{"x":0, "y":10},
+		"goodp":	{"x":15, "y":0},
+		"badp":{"x":15, "y":19},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":19, "y":15},
+		"goodp":{"x":4, "y":19},
+		"badp":	{"x":4, "y":0},
+		"difficulty":"med"
+	},
+	{
+		"start":{"x":19, "y":15},
+		"goodp":	{"x":4, "y":0},
+		"badp":{"x":4, "y":19},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":10, "y":0},
+		"goodp":{"x":0, "y":19},
+		"badp":	{"x":19, "y":19},
+		"difficulty":"med"
+	},
+  {
+		"start":{"x":10, "y":0},
+		"goodp":	{"x":19, "y":19},
+		"badp":{"x":0, "y":19},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":10, "y":19},
+		"goodp":{"x":0, "y":0},
+		"badp":	{"x":19, "y":0},
+		"difficulty":"med"
+	},
+	{
+		"start":{"x":10, "y":19},
+		"goodp":	{"x":19, "y":0},
+		"badp":{"x":0, "y":0},
+		"difficulty":"med"
+	},
+
+	{
+		"start":{"x":19, "y":19},
+		"goodp":{"x":19, "y":10},
+		"badp":	{"x":0, "y":0},
+		"difficulty":"hard"
+	},
+	{
+		"start":{"x":10, "y":0},
+		"goodp":{"x":10, "y":10},
+		"badp":	{"x":10, "y":19},
+		"difficulty":"hard"
+	}
+]

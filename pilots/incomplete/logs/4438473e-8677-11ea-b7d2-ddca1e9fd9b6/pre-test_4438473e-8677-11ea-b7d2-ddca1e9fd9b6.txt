@@ -1,0 +1,1 @@
+{"age": "18-25", "sex": "Male", "education": "HighSchool", "screen": "13_15", "cmpexperience": "intermediate", "cmptype": "laptop", "cmphours": "8-above", "inthours": "hourly", "pubcmp": "personal", "devices": "laptop", "pTime1": "704.722", "pTime2": "", "id": "4438473e-8677-11ea-b7d2-ddca1e9fd9b6", "image_id": ""}

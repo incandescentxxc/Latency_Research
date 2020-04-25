@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>Feedback Questionaire</title>
+<link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/stylesheet.css')}}" />
+ <script type="text/javascript" src = "{{url_for('static',filename='js/jquery-1.9.1.min.js')}}"></script>
+ <style>
+ body{
+  font-family: Verdana;
+ }
+ </style>
+</head>
+<body>
+
+<h1> Data Visualization Study </h1>
+<h2> Section 3: Feedback Questionaire</h2>
+
+<div id="instructions">
+<!--
+User ID(Provided by the Researcher): <span id="userId"></span><br>
+<br>
+<script>
+  $('#userId').html(sessionStorage.id)
+  console.log(sessionStorage.id)
+</script>
+-->
+<p>
+This is the last section. The focus of this study is to analyze how people explore data when faced with delalys in the tool. We thank you for your participation and your patience. Please tell us a little bit more about your experience. 
+</p>
+<br>
+<p>
+1) Please answer the following questions:
+</p>
+<ol>
+    <li>Are you <b>left-handed or right-handed? </b>
+<br/>
+<Input type ='Radio' form="mainForm" name="hand" value='left_left'/> Left-handed and used my left hand in the study &nbsp;&nbsp; &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="hand" value='left_right'> Left-handed but used my right hand in the study  &nbsp; &nbsp; &nbsp; 
+<br>
+<Input type ='Radio' form="mainForm" name="hand" value='right_right'> Right-handed and used my right hand in the study &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="hand" value='right_left'> Right-handed but used my left hand in the study &nbsp; &nbsp; &nbsp; 
+<br>
+<Input type ='Radio' form="mainForm" name="hand" value='not_sp'> Not Specified
+    </li>
+<br>
+    <li>When you were trying to find the target photos, have you ever <b>paused</b> for other things and then come back? (Please answer it honestly.) 
+<br/>
+<Input type ='Radio' form="mainForm" name="leave" value='yes'/> Yes &nbsp; &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="leave" value='no'/> No &nbsp; &nbsp; &nbsp; &nbsp; 
+<Input type ='Radio' form="mainForm" name="leave" value='not_sp'/> Not very sure
+<br/>
+    </li>
+</ol>
+<br>
+<p>
+2) For each of the statements below, please select the number that corresponds to  yor level of agreement with the statement.
+<!--
+<ul style="list-style-type: none">
+  <li>[1] Strongly Disagree</li>
+  <li>[2] Disagree</li>
+  <li>[3] Neutral</li>
+  <li>[4] Agree</li>
+  <li>[5] Strongly agree</li>
+</ul>
+-->
+</p>
+
+</div>
+
+<p id="page1"></p>
+<p id="page2"></p>
+<form  id="mainForm">
+      <input type="hidden" name="pTime1" id="pTime1" />
+      <input type="hidden" name="pTime2" id="pTime2" />
+      <input type="hidden" name="id" id="id"/> <!-- save id for next page-->
+      <input type="hidden" name="questions" id="questions" />
+      <input type="hidden" name="responses" id="responses" />
+      <input type= "hidden" id = "image_id" name = "image_id"/> 
+</form>
+	
+<div>
+<br>
+<p>3) Please provide any additional comments you may have in the text box below.</p>
+<textarea form="mainForm" name="comments" id="comments" type="text" cols="100" rows="6"></textarea>
+</p>
+<p align = "right"> <button style="font-size:16px; width: 150px;" type="button" id="continue1"  value = "Continue" onclick="handleSubmit()">Continue</button>
+</p>
+</body>
+
+<script type="text/javascript">
+
+function randomize(){
+   var rand1 = Math.random(0, 1);
+   var rand2 = Math.random(0, 1);
+   var s1 = "";
+   if(rand1 > 0.5)
+    s1 += "w-";
+   else
+    s1 += "p-";
+
+    s1 += Math.ceil(rand2 * 4);
+   
+    return s1;
+}
+
+    //******************************************************
+    //******************************************************
+    //.....important! Set up conditions!
+    //******************************************************
+    //******************************************************
+    
+    document.getElementById("image_id").value = "p-1";//randomize();
+    
+    //******************************************************
+    //******************************************************
+    //******************************************************
+
+    var startTime;
+    var batch = 22;
+    var page = 1;
+    var responses = new Array();
+
+    /*<?php
+      srand(time());
+      echo "var r = " . rand() . ";\n";
+      //read file into array
+      $file = "questionnaire/personality_questions.txt";
+      $questions = file($file);
+      echo "var questions = ".json_encode($questions).";\n"; 
+    ?> */
+    var d = new Date();
+    var r = d.getTime() + Math.floor(Math.random() * 1000)
+    var questions = [
+  //"The interaction style(buttons, menus, etc) was appropriate for the task.",
+  //"If given a choice, I would use this program to complete similar tasks in my daily life.",
+  //"The integration of the visualization with the user interface was seamless and lead to smooth interactions.",
+  "The program was too slow to be practical.",
+  "The visualization was aesthetically pleasing.",
+  "The program responded quickly enough to allow me to complete the task at my own pace.",
+  //"The task took too long to complete.",
+  //"If this interface were part of a software program for performing similar tasks to the one performed today, I would recommend it to my friends/colleagues.",
+  "I frequently had to wait for the program to load before continuing with the task.",
+  "I enjoyed performing the task.",
+  "The user interface was easy to use.",
+  "I wanted the program to load faster.",
+  "Using the program was annoying and I didn't enjoy it.",
+  "I felt that the visualization was always available and loaded when I wanted to continue with the task.",
+  //"The program helped me to quickly complete the task.",
+  "I felt that the program's response time interfered with my ability to complete the task in a timely manner.",
+  //"The visualization was an interesting visualization of data.",
+  //"The user interface design was cohesive and visually pleasing.",
+  //"The user interface was clumsy and slow.",
+  //"The computer response time was too slow for me to be able to complete the task in a reasonable amount of time."
+]
+/*
+    $.ajax({
+      url:"post_test.json",
+      type:"GET",
+      success:function(data){
+        questions = data
+      }
+    })
+*/
+    function init(){
+        startTime = time();
+
+    var id = r.toString()
+        document.getElementById("id").value = id; 
+        loadQuestions();
+    }
+    
+    function loadQuestions(){
+      var count = batch * (page - 1) + 1;
+      //alert(questions.length);
+      var text = "<table cellpadding=\"9\"> ";
+      for(; count <= questions.length && count <= (batch * page); count++ ){
+      //for(;count <= 5; count++){
+        text += "<tr bgcolor=" + rowColor(count) + "><td bgcolor="+ 
+          rowColor(count) + " style=\"max-width: 400px\">" + count +  ".   " + questions[count - 1] + 
+          "</td> <td> Strongly Disagree " +   
+          "<Input type = 'Radio' Name ='p" + count + "' value='1'>1 " + 
+          "<Input type = 'Radio' Name ='p" + count + "' value='2'>2 " + 
+          "<Input type = 'Radio' Name ='p" + count + "' value='3'>3 " +
+          "<Input type = 'Radio' Name ='p" + count + "' value='4'>4 " +
+          "<Input type = 'Radio' Name ='p" + count + "' value='5'>5 " +
+          "<Input checked = true style = 'display:none;' type = 'Radio' Name ='p" + count + "' value='-1'> " +
+          "Strongly Agree" + "</td> ";
+      }
+      
+      text += "</table>";
+      if(page == 1){
+         document.getElementById("page1").innerHTML = text;
+      }else{
+         document.getElementById("page2").innerHTML = text;
+      }
+    }
+    
+    function rowColor(num){
+        if(num % 2 == 0) 
+          return "#D0D0D0"; 
+        else 
+          return "white";
+    } 
+
+    function time(){
+        var d = new Date();
+        //start time in milliseconds
+        return d.getTime();
+    }
+    
+    function next(){
+      // console.log(document.getElementById("id"))
+      if(page == 1){
+        if(checkInput()){
+            document.getElementById("instructions").style.display = "none"; //hide
+            document.getElementById("page1").style.display = "none"; //hide
+            document.getElementById("continue1").style.display = "none";
+            document.getElementById("page2").style.display = "block"; //show
+            document.getElementById("continue2").style.display = "block";
+            startTime = time();
+            page = 2;
+            loadQuestions();
+        }
+      }
+    }  
+  
+    function checkInput(){
+    //alert("Checking input");
+    var i;
+    var max;
+
+    if(page == 1){
+      i = 1;
+      max = batch;
+    }else{
+      i = batch + 1;
+      max = 27; // number of questions
+    }
+    var isChecked = true;
+    for(; i <= max; i++){
+      var radioButtons = document.getElementsByName(("p"+ i));
+      
+      for(var j = 0; j < radioButtons.length; j++){
+        if(radioButtons[j].checked == true){
+          responses[i - 1] = radioButtons[j].value;
+        }
+        if(radioButtons[j].value == '-1' && radioButtons[j].checked == true){
+          isChecked = false;   
+        }
+      }
+    }
+
+
+    if(page == 1){
+        document.getElementById("pTime1").value = (time() - startTime) / 1000;
+        document.getElementById("questions").value = JSON.stringify(questions);
+        document.getElementById("responses").value = JSON.stringify(responses);
+        // return true;
+    }else{    
+        document.getElementById("pTime2").value = (time() - startTime) / 1000;
+        //alert(responses[questions[0]]);
+        document.getElementById("questions").value = JSON.stringify(questions);
+        document.getElementById("responses").value = JSON.stringify(responses);
+        // return true;
+    }
+
+     if (!isChecked){
+      if(true){
+        return true;
+      }else{
+        return false;
+      }
+     }
+     return true;
+  }
+    window.onload = init;
+    function handleSubmit(){
+      if(checkInput()){
+          $("input[name='id']").attr("value",sessionStorage.id);
+          var values = $("#mainForm").serialize();
+          $.ajax({
+          url: "/search-study/save-responses/post-test/",
+          data: values,
+          type: "POST",
+          success: function(data){
+            window.location = "{{url_for('renderFinish')}}"; 
+          },error: function(st) {
+            window.location = "{{url_for('renderFinish')}}"; 
+          }
+        });
+      }
+    }
+</script>
+
+</html>
+
+

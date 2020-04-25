@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<head>
+<title>Experiment Instructions</title>
+
+<link rel="stylesheet" type="text/css" href="{{url_for('static',filename='css/stylesheet.css')}}" />
+
+<style type="text/css">
+.instrucStyle {
+}
+</style>
+
+</head>
+<body>
+
+<h1>Data Visualization Study </h1>
+
+<h2>Section 2: Image Puzzle Task</h2>
+
+<p>
+In this portion of the study, you will view an interface which contains
+several parts: a square window showing a portion of a collage of bird images;
+pictures marked with colorful shapes to find within the collage (or "target pictures");
+and two function buttons called "FOUND" and "FINISH".
+</p>
+
+<p>
+The main task is to <b>find 18 target pictures</b> within
+the collage. You can <b>drag within the visualization window</b> to see more of
+the image collage. There may be a delay before some images appear in the
+collage.
+</p>
+
+<p>
+
+An example of a target picture is provided below. The target picture has
+colorful circles in the corners.  When you find a
+target picture, move the target picture to the center
+of the visualization window, and click on the "FOUND" button.
+</p>
+<img src="{{url_for('static',filename='img/breadcrumbs_diagram.jpg')}}" alt="target picture example" height="350" width="500"> 
+<p>
+The target picture will be clearly marked as found (shown in the picture below), and the count of total targets
+found will increase.
+</p>
+<img src="{{url_for('static',filename='img/breadcrumbs_diagram_found.jpg')}}" alt="target picture example" height="350" width="500"> 
+
+<p> You can end the task and move on to the next page at any
+time by clicking the "FINISH" button. Once you confirm to finish, you
+will not be able to interact with the collage anymore.
+</p>
+
+<p>
+When you are ready to start, please press "Continue" below.
+</p>
+
+<form method = "post" action = "{{url_for('renderPuzzle')}}">
+  <p>&nbsp;</p>
+    <p align = "right">
+      <input type= "hidden" name = "id" id = "id" value = "DEBUGGING" /> 
+      <input type="hidden" name = "image_id" value = "DEBUGGING" />
+      <input type= "submit"  style="width: 150px;margin-left:160px;font-size:16px;" id= "Accept" value = "Continue">
+    </p>
+
+</form>
+
+<script type="text/javascript">
+  // store waldo data
+  //sessionStorage.id = "{{guid}}";
+  document.getElementById("id").value = sessionStorage.id
+    </script>
