@@ -28,7 +28,9 @@ button {
 #timer {
   color: red;
 }
-
+#svg-zoom-container{
+  display: flex;
+}
 </style>
 
 <div>
@@ -36,7 +38,6 @@ button {
   <p>There is a single picture of a dinosaur, either to directly to the left or directly to the right of your starting position. <b>Find this dinosaur picture</b> within the collage.</p>
   <p><b>Please do not reload the page or hit the back button in the browser window!</b></p>
   <div id="timer-container"><b><span id="timer">0 min 00 seconds</span></b> remaining</div>
-  <p>Zoom Level: <span id="zoomLevel"></span></p>
   <p>Targets Found: <span id="targetsFound"></span></p>
   <div>
     <span id="sendDataInfo"></span> <span id="batchNumber"></span>
@@ -44,9 +45,17 @@ button {
   <button id="finish-button">FOUND <span id="answer-number"></span></button>
   <button id="quit-button">FINISH</button>
 </div>
-<div id="svg-container">
-<svg id="svg-obj" width="1000" height="700"></svg>
-<p id="done-text" class="hide">You have <b> 0 min 0 seconds</b>. Time out. Please click "FINISH".</p>
+<div id="svg-zoom-container">
+  <div id="svg-container">
+    <svg id="svg-obj" width="1000" height="700"></svg>
+    <p id="done-text" class="hide">You have <b> 0 min 0 seconds</b>. Time out. Please click "FINISH".</p>
+    </div>
+    <div id="zoom_prompt">
+      <h2>Zoom Level: <span id="zoomLevel"></span></h2>
+      <h3><b>To zoom in, double click the area you want to zoom into.</b></h3>
+      <h3><b>To zoom out, right click the area you want to zoom out.</b></h3>
+      <h3><b>You can at most zoom to level 5.</b></h3>
+    </div>
 </div>
 <script src="{{url_for('static',filename='lib/d3/d3.js')}}"></script>
 <script src="{{url_for('static',filename='js/logs.js')}}"></script>
@@ -117,7 +126,7 @@ var image_positions = JSON.parse(decodeHtml("{{imagesDict}}"));
 var tilesAdded = [];
 
 //var starting_pos = {"x":{{starting_pos_x}},"y":{{starting_pos_y}}};
-var starting_pos = {"x": 0, "y":0};
+var starting_pos = {"x": 19, "y": 19};
 // pixel position
 var center_loc = {"x":starting_pos.x*imwidth+imwidth/2.0,
   "y":starting_pos.y*imheight+imheight/2.0};
@@ -196,8 +205,8 @@ finish_button_obj.onclick = function() {
   // check if the target is really in the center of the view and the zoom level is 5
   // calculate the index of current centered pic
   var curr_pos = {"x":Math.floor(staging_loc.x / imwidth),"y":Math.floor(staging_loc.y / imheight)};
-  if(curr_pos.x === good_pos.x && curr_pos.y === good_pos.y ||
-    curr_pos.x === bad_pos.x && curr_pos.y === bad_pos.y) {
+  if(zoom_level === 4 && (curr_pos.x === good_pos.x && curr_pos.y === good_pos.y ||
+    curr_pos.x === bad_pos.x && curr_pos.y === bad_pos.y)) {
     if(alreadyFound(curr_pos)) {
       alert("You have already marked this target picture as found. Try to find the other target picture.");
     } else {
@@ -212,7 +221,7 @@ finish_button_obj.onclick = function() {
       }
       }
   } else {
-    alert("The target picture is not in view. Make sure the target picture is in the center of the collage window.");
+    alert("The target picture is not in view or you didn't zoom into the biggest level. Make sure the target picture is in the center of the collage window and you zoom into level 5.");
   }
 };
 // for tracking movement

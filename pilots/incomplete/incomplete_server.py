@@ -142,10 +142,10 @@ def renderPuzzle():
                                              delayVals_quick=params["delayVals"]["quick"],
                                              delayVals_med=params["delayVals"]["med"],
                                              delayVals_slow=params["delayVals"]["slow"],
-                                             good_pos_x=params["posVals"]["goodp"]["x"],
-                                             good_pos_y=params["posVals"]["goodp"]["y"],
-                                             bad_pos_x=params["posVals"]["badp"]["x"],
-                                             bad_pos_y=params["posVals"]["badp"]["y"],
+                                             good_pos_x=params["posVals"]["goodp1"]["x"],
+                                             good_pos_y=params["posVals"]["goodp1"]["y"],
+                                             bad_pos_x=params["posVals"]["badp1"]["x"],
+                                             bad_pos_y=params["posVals"]["badp1"]["y"],
                                              starting_pos_x=params["posVals"]["start"]["x"],
                                              starting_pos_y=params["posVals"]["start"]["y"],
                                              imagesDict=json.dumps(params["imagesDict"])))
@@ -396,12 +396,32 @@ def chooseExperimentalParameters():
     solution_dist = 8
     x_start = posVals["start"]["x"]
     y_start = posVals["start"]["y"]
-    x_init = posVals["goodp"]["x"]
-    y_init = posVals["goodp"]["y"]
-    x1_init = posVals["badp"]["x"]
-    y1_init = posVals["badp"]["y"]
+    xgood_init =[]
+    ygood_init = []
+    xbad_init = []
+    ybad_init = []
+    xgood_init.append(posVals["goodp1"]["x"])
+    xgood_init.append(posVals["goodp2"]["x"])
+    xgood_init.append(posVals["goodp3"]["x"])
+    xgood_init.append(posVals["goodp4"]["x"])
+    ygood_init.append(posVals["goodp1"]["y"])
+    ygood_init.append(posVals["goodp2"]["y"])
+    ygood_init.append(posVals["goodp3"]["y"])
+    ygood_init.append(posVals["goodp4"]["y"])
+    xbad_init.append(posVals["badp1"]["x"])
+    xbad_init.append(posVals["badp2"]["x"])
+    xbad_init.append(posVals["badp3"]["x"])
+    xbad_init.append(posVals["badp4"]["x"])
+    ybad_init.append(posVals["badp1"]["y"])
+    ybad_init.append(posVals["badp2"]["y"])
+    ybad_init.append(posVals["badp3"]["y"])
+    ybad_init.append(posVals["badp4"]["y"])
+    # x_init = posVals["goodp"]["x"]
+    # y_init = posVals["goodp"]["y"]
+    # x1_init = posVals["badp"]["x"]
+    # y1_init = posVals["badp"]["y"]
     imagesDict = generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
-                                          x_init, y_init, x1_init, y1_init)
+                                          xgood_init, ygood_init, xbad_init, ybad_init)
     return {"delayVals": delayVals, "posVals": posVals, "imagesDict": imagesDict}
 
 
@@ -465,9 +485,14 @@ def generateImagesDict():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+def checkLocationinPositions(xList, x):
+    for item in xList:
+        if(item == x):
+            return True
+    return False
 
 def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
-                             x_init, y_init, x1_init, y1_init):
+                             xgood, ygood, xbad, ybad):
     files = os.listdir(collage_root + collection)
     # files.pop(files.index('solution.jpg'))
     # files.pop(files.index('solution.png'))
@@ -509,7 +534,7 @@ def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y
 
     for x in range(xgrid):
         for y in range(ygrid):
-            if ((x == x_init and y == y_init) or (x == x1_init and y == y1_init)):
+            if ((checkLocationinPositions(xgood, x) and checkLocationinPositions(ygood, y)) or (checkLocationinPositions(xbad, x) and checkLocationinPositions(ybad, y))):
                 # myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = "solution.jpg"
                 myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = "solution2.jpg"
                 offset += 1 # it's confusing here but we poped more files than the increment in here
