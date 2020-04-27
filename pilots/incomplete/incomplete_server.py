@@ -137,7 +137,7 @@ def renderPuzzle():
     # app.logger.info(msg)
     params = chooseExperimentalParameters()
     # return {"delayVals":delayVals,"posVals":posVals,"imagesDict":imagesDict}
-    response = make_response(render_template(os.path.join('pilots', 'incomplete', 'test.html'),
+    response = make_response(render_template(os.path.join('pilots', 'incomplete', 'test_zoom.html'),
                                              delayVals_fast=params["delayVals"]["fast"],
                                              delayVals_quick=params["delayVals"]["quick"],
                                              delayVals_med=params["delayVals"]["med"],
@@ -389,8 +389,10 @@ def chooseExperimentalParameters():
     # posVals = choosePositions()
     # collection = "500-375"
     collection = "balanced-500-375"
-    xgrid = 20
-    ygrid = 20
+    # xgrid = 20
+    # ygrid = 20
+    xgrid = 40
+    ygrid = 40
     solution_dist = 8
     x_start = posVals["start"]["x"]
     y_start = posVals["start"]["y"]
@@ -467,10 +469,10 @@ def generateImagesDict():
 def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
                              x_init, y_init, x1_init, y1_init):
     files = os.listdir(collage_root + collection)
-    files.pop(files.index('solution.jpg'))
-    files.pop(files.index('solution.png'))
+    # files.pop(files.index('solution.jpg'))
+    # files.pop(files.index('solution.png'))
     files.pop(files.index('solution2.jpg'))
-    files.pop(files.index('solution2.png'))
+    # files.pop(files.index('solution2.png'))
     random.shuffle(files)
     offset = 0  # random.randint(0, len(files)-1)
     # if offset + 450 >= len(files):
