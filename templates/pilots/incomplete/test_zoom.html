@@ -117,12 +117,13 @@ var image_positions = JSON.parse(decodeHtml("{{imagesDict}}"));
 var tilesAdded = [];
 
 //var starting_pos = {"x":{{starting_pos_x}},"y":{{starting_pos_y}}};
-var starting_pos = {"x": 19, "y":19};
+var starting_pos = {"x": 0, "y":0};
 // pixel position
 var center_loc = {"x":starting_pos.x*imwidth+imwidth/2.0,
   "y":starting_pos.y*imheight+imheight/2.0};
 //var center_loc = {"x":width/2.0,"y":height/2.0};
-// note that staging point is actually the background position corresponding to the current center point in the view
+// staging point is very important. For its value, it is actually the center point of some pic
+// but this pic is corresonding to the pic which is in the center of the view
 var staging_loc = {"x":center_loc.x,"y":center_loc.y};
 // grid positions
 //var good_pos ={"x":9,"y":0}, bad_pos={"x":9,"y":10};
@@ -261,12 +262,22 @@ overlay
     isFirst = false;
     var coords = d3.mouse(overlay.node());
     if(zoom_level < 4){
+      var diff_x = coords[0] - width/2;
+      var diff_y = coords[1] - height/2;
+      console.log(diff_x, diff_y);
+      staging_loc.x += diff_x;
+      staging_loc.y += diff_y;
+      // find the new starting point according to the click
+      var current_pos = {"x":Math.floor(staging_loc.x / imwidth),"y":Math.floor(staging_loc.y / imheight)};
+      console.log("current:", current_pos);     
       zoom_level += 1;
       zoom_value = zoom_ratio[zoom_level];
       imwidth = 465/zoom_value;
       imheight = 349/zoom_value;
-      // todo find the new starting point according to the click
-      var starting_pos = {"x": 0, "y":0};
+      //calcluate the new staging value based on new imwidth and imheight
+      var center_loc = {"x":current_pos.x*imwidth+imwidth/2.0,
+      "y":current_pos.y*imheight+imheight/2.0};
+      staging_loc = {"x":center_loc.x,"y":center_loc.y}; 
       traverseImagePositions(sample_pos,isFirst);
       zoomObject.innerText = zoom_level+1; 
     }
@@ -275,12 +286,20 @@ overlay
     d3.event.preventDefault();
     var coords = d3.mouse(overlay.node());
     if(zoom_level > 0){
+      var diff_x = coords[0] - width/2;
+      var diff_y = coords[1] - height/2;
+      staging_loc.x += diff_x;
+      staging_loc.y += diff_y;
+      // todo find the new starting point according to the click
+      var current_pos = {"x":Math.floor(staging_loc.x / imwidth),"y":Math.floor(staging_loc.y / imheight)};
       zoom_level -= 1;
       zoom_value = zoom_ratio[zoom_level];
       imwidth = 465/zoom_value;
       imheight = 349/zoom_value;
-      // todo find the new starting point according to the click
-      var starting_pos = {"x": 0, "y":0};
+      //calcluate the new staging value based on new imwidth and imheight
+      var center_loc = {"x":current_pos.x*imwidth+imwidth/2.0,
+      "y":current_pos.y*imheight+imheight/2.0};
+      staging_loc = {"x":center_loc.x,"y":center_loc.y};      
       traverseImagePositions(sample_pos,isFirst);
       zoomObject.innerText = zoom_level+1;
     }
@@ -521,7 +540,7 @@ function getTilesWithinBounds(d,xscan,yscan,sample) {
 // and the tiles to add, set the appropriate delays for the tiles
 // with respect to these targets
 function appendTilesUsingTargets(goodp,badp,tilePositions) {
-  console.log("tilePositions",tilePositions)
+  //console.log("tilePositions",tilePositions)
   //var goodLine = {"a":{"x":width/2.0,"y":height/2.0},"b":goodp};
   //var badLine = {"a":{"x":width/2.0,"y":height/2.0},"b":badp};
   //svg.selectAll("line").remove();
