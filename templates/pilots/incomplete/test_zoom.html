@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+
+svg {
+  border: 3px solid black;
+}
+
+.hide {
+  display: none;
+}
+
+button {
+  margin-bottom: 10px;
+}
+
+#sendDataInfo,#batchNumber {
+  color: blue;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+#timer-container {
+  display: none;
+}
+
+#timer {
+  color: red;
+}
+#svg-zoom-container{
+  display: flex;
+}
+</style>
+
+<div>
+  <p>You can drag the collage to see more images. There may be a delay before some images appear.</p>
+  <p>There is a single picture of a dinosaur, either to directly to the left or directly to the right of your starting position. <b>Find this dinosaur picture</b> within the collage.</p>
+  <p><b>Please do not reload the page or hit the back button in the browser window!</b></p>
+  <div id="timer-container"><b><span id="timer">0 min 00 seconds</span></b> remaining</div>
+  <p>Targets Found: <span id="targetsFound"></span></p>
+  <div>
+    <span id="sendDataInfo"></span> <span id="batchNumber"></span>
+  </div>
+  <button id="finish-button">FOUND <span id="answer-number"></span></button>
+  <button id="quit-button">FINISH</button>
+</div>
+<div id="svg-zoom-container">
+  <div id="svg-container">
+    <svg id="svg-obj" width="1000" height="700"></svg>
+    <p id="done-text" class="hide">You have <b> 0 min 0 seconds</b>. Time out. Please click "FINISH".</p>
+    </div>
+    <div id="zoom_prompt">
+      <h2>Zoom Level: <span id="zoomLevel"></span></h2>
+      <h3><b>To zoom in, double click the area you want to zoom into.</b></h3>
+      <h3><b>To zoom out, right click the area you want to zoom out.</b></h3>
+      <h3><b>You can at most zoom to level 5.</b></h3>
+    </div>
+</div>
+<script src="{{url_for('static',filename='lib/d3/d3.js')}}"></script>
+<script src="{{url_for('static',filename='js/logs.js')}}"></script>
+<script>
+d3.selection.prototype.moveToFront = function() {
+  return this.each(function(){
+  this.parentNode.appendChild(this);
+  });
+};
+var log = [];
+var userid = sessionStorage.id;
+//console.log(userid);
+var timer_interval = null;//setInterval(timer, 1000); // Time in milliseconds
+var timer_counter = 10;
+
+// controlled by zooming level
+var zoom_ratio = [20,10,5,2.5,1.25]; // corresponding to 40*40, 20*20, 10*10, 5*5, 2.5*2.5
+var zoom_level = 0; //0, 1, 2, 3, 4
+var zoom_value = zoom_ratio[zoom_level];
+var zoomObject = document.getElementById("zoomLevel");
+zoomObject.innerText = zoom_level+1; 
+var isFirst = true;
+
+var svg = d3.select("svg"),
+    width = +svg.attr("width"),
+    height = +svg.attr("height"),
+    imwidth = 465/zoom_value,
+    imheight = 349/zoom_value,
+    boxrad = {"x":imwidth,"y":imheight};
+    //boxrad = {"x":imwidth/2.0,"y":imheight/2.0};
+
+svg.append("text")
+        .attr("x",0)
+        .attr("y",100)
+        .text("LOADING")
+        .attr("font-family","sans-serif")
+        .attr("font-size","100px")
+        .attr("fill","blue")
+        .classed("loadingText", true);
+svg.append("text")
+        .attr("x",0)
+        .attr("y",100+80)
+        .text("DATA...")
+        .attr("font-family","sans-serif")
+        .attr("font-size","100px")
+        .attr("fill","blue")
+        .classed("loadingText", true);
+svg.append("text")
+        .attr("x",0)
+        .attr("y",100+80+60)
+        .text("This may take a few")
+        .attr("font-family","sans-serif")
+        .attr("font-size","60px")
+        .attr("fill","blue")
+        .classed("loadingText", true);
+svg.append("text")
+        .attr("x",50)
+        .attr("y",100+80+60+60)
+        .text("minutes...")
+        .attr("font-family","sans-serif")
+        .attr("font-size","60px")
+        .attr("fill","blue")
+        .classed("loadingText", true);
+var imagesList = [];
+var imagesCache = {};
+
+var image_positions = JSON.parse(decodeHtml("{{imagesDict}}"));
+var tilesAdded = [];
+
+//var starting_pos = {"x":{{starting_pos_x}},"y":{{starting_pos_y}}};
+var starting_pos = {"x": 19, "y": 19};
+// pixel position
+var center_loc = {"x":starting_pos.x*imwidth+imwidth/2.0,
+  "y":starting_pos.y*imheight+imheight/2.0};
+//var center_loc = {"x":width/2.0,"y":height/2.0};
+// staging point is very important. For its value, it is actually the center point of some pic
+// but this pic is corresonding to the pic which is in the center of the view
+var staging_loc = {"x":center_loc.x,"y":center_loc.y};
+// grid positions
+//var good_pos ={"x":9,"y":0}, bad_pos={"x":9,"y":10};
+var good_pos = {"x":{{good_pos_x}},"y":{{good_pos_y}}};
+var bad_pos = {"x":{{bad_pos_x}},"y":{{bad_pos_y}}};
+// pixel positions
+var good_loc ={"x":imwidth*good_pos.x+imwidth/2.0,
+  "y":imheight*good_pos.y+imheight/2.0};
+var bad_loc={"x":imwidth*bad_pos.x+imwidth/2.0,
+  "y":imheight*bad_pos.y+imheight/2.0};
+var r=50;
+var goodBox = {"minp":{"x":good_loc.x-boxrad.x,"y":good_loc.y-boxrad.y},
+  "maxp":{"x":good_loc.x+boxrad.x,"y":good_loc.y+boxrad.y}};
+var badBox = {"minp":{"x":bad_loc.x-boxrad.x,"y":bad_loc.y-boxrad.y},
+  "maxp":{"x":bad_loc.x+boxrad.x,"y":bad_loc.y+boxrad.y}};
+var sample_pos = 100;
+// controlled by computeHalfLine
+var halfLine = null;
+
+// controlled by traverseImagePositions
+var positions = {};
+var global_max = {};
+var pixel_positions = {};
+// ensures that ordering is consistent when adding tiles
+var pixelOrdersX = [];
+var pixelOrdersY = [];
+
+//controlled by click/drag handlers
+var targetsFound = 0;
+var targetsFoundObj = document.getElementById("targetsFound");
+var targetsFoundList = [];
+targetsFoundObj.innerText = targetsFound;
+var finish_button_obj = document.getElementById("finish-button");
+var quit_button_obj = document.getElementById("quit-button");
+quit_button_obj.onclick = function() {
+  if(confirm("You are leaving the collage page. To stay on this page and continue the task, hit Cancel. Click OK to submit your answers and move on to the final survey!")) {
+    logStudyEndButtonClick();
+    logTargetsFoundList();
+    var sendDataInfoObj = document.getElementById("sendDataInfo");
+    var batchNumberObj = document.getElementById("batchNumber");
+    var url = "{{url_for('storeLogDataInBatches')}}";
+      sendDataInfoObj.innerText = "Sending log data...";
+    
+      sendInBatches(userid,log,batchNumberObj,url,function(){
+        batchNumberObj.innerText = "";
+        sendDataInfoObj.innerText = "Done sending log data! Moving to next page...";
+        window.location = "{{url_for('renderPostTest')}}";
+      });
+  }
+};
+
+// did the user already find this target?
+function alreadyFound(curr_pos) {
+  for (var i = 0; i < targetsFoundList.length; i++) {
+    var pos = targetsFoundList[i];
+    if(curr_pos.x === pos.x && curr_pos.y === pos.y) {
+      return true;
+    }
+  }
+  return false;
+};
+
+// the button is the "FOUND" button
+finish_button_obj.onclick = function() {
+  // we do not perform check if the users actually find more than 2 targets
+  if(targetsFoundList.length === 2) {
+    alert("You have already marked both target pictures as found. You have completed the task.");
+    return;
+  }
+  // check if the target is really in the center of the view and the zoom level is 5
+  // calculate the index of current centered pic
+  var curr_pos = {"x":Math.floor(staging_loc.x / imwidth),"y":Math.floor(staging_loc.y / imheight)};
+  if(zoom_level === 4 && (curr_pos.x === good_pos.x && curr_pos.y === good_pos.y ||
+    curr_pos.x === bad_pos.x && curr_pos.y === bad_pos.y)) {
+    if(alreadyFound(curr_pos)) {
+      alert("You have already marked this target picture as found. Try to find the other target picture.");
+    } else {
+      logFoundButtonClick();
+      targetsFound++;
+      targetsFoundList.push(curr_pos);
+      targetsFoundObj.innerText = targetsFound;
+      if(targetsFound === 2) {
+        alert("Correct! You have found both targets. You are done with this task.");
+      } else {
+        alert("Correct, you found the target picture! You are done with this task.");
+      }
+      }
+  } else {
+    alert("The target picture is not in view or you didn't zoom into the biggest level. Make sure the target picture is in the center of the collage window and you zoom into level 5.");
+  }
+};
+// for tracking movement
+var svg_obj = document.getElementById("svg-obj");
+var tileContainer = svg.append("g");
+var overlay = svg.append("rect")
+  .attr("width", +svg.attr("width"))
+  .attr("height", +svg.attr("height"))
+	.style("fill", "#000000")
+	.style("opacity",0)
+  .attr("class","pan-rect");
+
+var prev = {};// = {"x":0,"y":0};
+var diff = {"x":0,"y":0};
+var prevDragStart = {"x":null,"y":null}; // used to pair drag start with drag end
+var prevStagingLoc = {"x":null,"y":null}; // used to pair drag start with drag end
+overlay.call(d3.drag()
+  .on("start", function() {
+    //if(click_flag) return;
+    // get current mouse location
+    var coords = d3.mouse(overlay.node());
+    logDragStart();
+    prevDragStart.x = coords[0];
+    prevDragStart.y = coords[1];
+    prevStagingLoc.x = staging_loc.x;
+    prevStagingLoc.y = staging_loc.y;
+
+    prev.x = coords[0];
+    prev.y = coords[1];
+    logStagingLoc();})
+  .on("drag", function() {
+    //if(click_flag) return;
+    logDragMid();updatePrev();logStagingLoc();
+  })
+  .on("end", function() {
+    //if(click_flag) return;
+    logDragEnd();
+    updatePrev();
+    removeOffscreenTiles();
+    addPreviouslyHiddenTiles(sample_pos);
+    logStagingLoc();
+    //console.log("staging_loc.x",staging_loc.x,"staging_loc.y",staging_loc.y);
+  })
+);
+overlay
+.on("dblclick",function(d){ 
+    isFirst = false;
+    var coords = d3.mouse(overlay.node());
+    if(zoom_level < 4){
+      var diff_x = coords[0] - width/2;
+      var diff_y = coords[1] - height/2;
+      console.log(diff_x, diff_y);
+      staging_loc.x += diff_x;
+      staging_loc.y += diff_y;
+      // find the new starting point according to the click
+      var current_pos = {"x":Math.floor(staging_loc.x / imwidth),"y":Math.floor(staging_loc.y / imheight)};
+      console.log("current:", current_pos);     
+      zoom_level += 1;
+      zoom_value = zoom_ratio[zoom_level];
+      imwidth = 465/zoom_value;
+      imheight = 349/zoom_value;
+      //calcluate the new staging value based on new imwidth and imheight
+      var center_loc = {"x":current_pos.x*imwidth+imwidth/2.0,
+      "y":current_pos.y*imheight+imheight/2.0};
+      staging_loc = {"x":center_loc.x,"y":center_loc.y}; 
+      traverseImagePositions(sample_pos,isFirst);
+      zoomObject.innerText = zoom_level+1; 
+    }
+})
+.on("contextmenu", function (d, i) {
+    d3.event.preventDefault();
+    var coords = d3.mouse(overlay.node());
+    if(zoom_level > 0){
+      var diff_x = coords[0] - width/2;
+      var diff_y = coords[1] - height/2;
+      staging_loc.x += diff_x;
+      staging_loc.y += diff_y;
+      // todo find the new starting point according to the click
+      var current_pos = {"x":Math.floor(staging_loc.x / imwidth),"y":Math.floor(staging_loc.y / imheight)};
+      zoom_level -= 1;
+      zoom_value = zoom_ratio[zoom_level];
+      imwidth = 465/zoom_value;
+      imheight = 349/zoom_value;
+      //calcluate the new staging value based on new imwidth and imheight
+      var center_loc = {"x":current_pos.x*imwidth+imwidth/2.0,
+      "y":current_pos.y*imheight+imheight/2.0};
+      staging_loc = {"x":center_loc.x,"y":center_loc.y};      
+      traverseImagePositions(sample_pos,isFirst);
+      zoomObject.innerText = zoom_level+1;
+    }
+
+});
+sendGetRequest({userid:sessionStorage.id,page:"puzzle"},"{{url_for('logAccess')}}",function(){});
+console.log("this is the delays case");
+positions = traverseImagePositions(sample_pos, isFirst);
+
+//preload the images in the collage
+function preloadImages() {
+  var unloaded = imagesList.length;
+  //console.log("unloaded",unloaded);
+  for(var i = 0; i < imagesList.length; i++) {
+    preloadImage(imagesList[i],function() {
+      unloaded--;
+      if(unloaded === 0) {
+        console.log("done preloading");
+        init(); // continue with the rest of the process
+      }
+      //console.log(unloaded);
+    });
+  }
+};
+
+// preload the image at the given url
+function preloadImage(url,callback) {
+  // already cached
+  if(imagesCache.hasOwnProperty(url)) {
+    callback();
+    return;
+  }
+  try {
+    var _img = new Image();
+    _img.onload = callback;
+    _img.src = url;
+    imagesCache[url] = _img;
+    //console.log("loaded image",url);
+  } catch (e) {
+    console.log("failed to load image",url);
+  }
+};
+
+// used to identify all the positions in the image_positions object
+function traverseImagePositions(sample, isFirst) {
+  pixel_positions = {"x":{}};
+  pixelOrdersX = [];
+  pixelOrdersY = [];
+  var positions = [];
+  for (var xpos in image_positions.x) {
+    if (image_positions.x.hasOwnProperty(xpos)) {
+      var pxpos = xpos * imwidth;
+      if(!("x" in global_max) || global_max.x < pxpos) {
+        global_max.x = pxpos;
+      }
+      if(!(pxpos in pixel_positions.x)) {
+        pixel_positions.x[pxpos]= {"y":{}};
+      }
+      pixelOrdersX.push(pxpos);
+      var tempPixelOrdersY = [];
+      for (var ypos in image_positions.x[xpos].y) {
+        if (image_positions.x[xpos].y.hasOwnProperty(ypos)) {
+          var pypos = ypos * imheight;
+          if(!("y" in global_max) || global_max.y < pypos) {
+            global_max.y = pypos;
+          }
+          if(!(pypos in pixel_positions.x[pxpos].y)) {
+            pixel_positions.x[pxpos].y[pypos]= {"sample":image_positions.x[xpos].y[ypos].sample};
+          }
+          //imagesList.push("{{url_for('serveImage',collection='500-375')}}?image_name="+image_positions.x[xpos].y[ypos].sample[sample_pos]);
+          imagesList.push("{{url_for('serveImage',collection='balanced-500-375')}}?image_name="+image_positions.x[xpos].y[ypos].sample[sample_pos]);
+          tempPixelOrdersY.push(pypos);
+          // only add if it's in the initial viewport
+          //positions.push({"x":xpos*imwidth,"y":ypos*imheight,"sample":image_positions.x[xpos].y[ypos].sample[sample]});
+          var temp = {"x":xpos*imwidth-staging_loc.x+width/2.0,
+            "y":ypos*imheight-staging_loc.y+height/2.0,"sample":image_positions.x[xpos].y[ypos].sample[sample]};
+          var temp2 = {"staging_loc":staging_loc,"pxpos":parseFloat(pxpos),"pypos":parseFloat(pypos),
+            "x":parseFloat(pxpos)-parseFloat(staging_loc.x)+ width/2.0,
+            "y":parseFloat(pypos)-parseFloat(staging_loc.y)+height/2.0,
+            "sample":image_positions.x[xpos].y[ypos].sample[sample]};
+          //if(tileWithinBox({"x":staging_loc.x-width/2.0+1,"y":staging_loc.y-height/2.0+1},
+          //  {"x":staging_loc.x+width/2.0-1,"y":staging_loc.y+height/2.0-1},temp,imwidth,imheight)) {
+          if(tileWithinBox({"x":0,"y":0},{"x":width,"y":height},temp,imwidth,imheight)) {
+              //positions.push(temp);
+              positions.push(temp2);
+          }
+        }
+      }
+      pixelOrdersY.push(tempPixelOrdersY); // for each pxpos, should have an array of pypos values
+    }
+  }
+  if(isFirst){
+    preloadImages();
+  } else{
+    reinit(positions);
+  }
+  console.log(positions);
+  return positions;
+};
+
+function tileWithinBox(minp,maxp,p,w,h) {
+  return polygonWithinBox(minp,maxp,[p,{"x":p.x+w,"y":p.y+h},{"x":p.x,"y":p.y+h},{"x":p.x+w,"y":p.y}]);
+};
+
+// minp = minimum x and y values for the box
+// maxp = maximum x and y values for the box
+// poly = all outside points for the polygon
+function polygonWithinBox(minp,maxp,poly) {
+  for(var i = 0; i < poly.length; i++) {
+    var p = poly[i];
+    if(p.x >= minp.x && p.y >= minp.y && p.x <= maxp.x && p.y <= maxp.y) {
+      return true;
+    }
+  }
+  return false;
+};
+
+function decodeHtml(html) {
+    var txt = document.createElement("textarea");
+    txt.innerHTML = html;
+    return txt.value;
+};
+
+function updatePrev() {
+  //console.log(["old prev",prev.x,prev.y]);
+  var coords = d3.mouse(overlay.node());
+  diff = {"x":coords[0] - prev.x,"y":coords[1]-prev.y};
+  prev.x = coords[0];
+  prev.y = coords[1];
+  //console.log(["new prev",prev.x,prev.y]);
+  //console.log(["diff",diff.x,diff.y]);
+  staging_loc.x -= diff.x;
+  staging_loc.y -= diff.y;
+  tileContainer.selectAll(".tiles").attr("x",function(d){d.x = d.x+diff.x;return d.x;})
+    .attr("y",function(d){d.y = d.y+diff.y;return d.y;});
+
+  // update background
+  var bgx = parseFloat(svg.select("#background-rect").attr("x"));
+  var bgy = parseFloat(svg.select("#background-rect").attr("y"));
+  svg.select("#background-rect").attr("x",bgx+diff.x)
+    .attr("y",bgy+diff.y);
+  //svg.selectAll(".target").attr("cx",function(d){d.x = d.x+diff.x;return d.x;})
+  //  .attr("cy",function(d){d.y = d.y+diff.y;return d.y;});
+};
+
+function removeOffscreenTiles() {
+  tileContainer.selectAll(".tiles").filter(function(d) {
+    return d.x > (width) || d.x < -imwidth || d.y < -imheight || d.y > (height);
+    }).each(function(d,i){logTileRemoval(d);}).remove();
+};
+
+
+function addPreviouslyHiddenTiles(sample) {
+  // note that at this time, staging_loc is the endpoint after dragging, center_loc is
+  // initially the starting point
+  var d = {"x":staging_loc.x - center_loc.x,
+    "y":staging_loc.y - center_loc.y};
+  //console.log("d",d);
+  var xscan,yscan; 
+  // if pan right, add tiles from the left
+  if(d.x < 0) {
+    xscan = [staging_loc.x-width/2.0,center_loc.x-width/2.0];
+  }  
+  // if pan left, add tiles from the right
+  else {
+    xscan = [center_loc.x+width/2.0,staging_loc.x+width/2.0];
+  }
+  // if pan down, add tiles from the top
+  if(d.y < 0) {
+    yscan = [staging_loc.y-height/2.0,center_loc.y-height/2.0];
+  }  
+  // if pan up, add tiles from the bottom
+  else {
+    yscan = [center_loc.y+height/2.0,staging_loc.y+height/2.0];
+  }
+
+  getTilesWithinBounds(d,xscan,yscan,sample);
+  // update center
+  center_loc.x = staging_loc.x;
+  center_loc.y = staging_loc.y;
+};
+
+function getTilesWithinBounds(d,xscan,yscan,sample) {
+  var add_positions = [];
+  var xrange = [staging_loc.x-width/2.0,staging_loc.x+width/2.0];
+  var yrange = [staging_loc.y-height/2.0,staging_loc.y+height/2.0];
+  //console.log("xscan",xscan);
+  //console.log("yscan",yscan);
+  //console.log("xrange",xrange);
+  var pxposKeys = pixelOrdersX;
+  for(var i = 0; i < pxposKeys.length; i++) {
+    var pxpos = pxposKeys[i];
+    if(!pixel_positions.x.hasOwnProperty(pxpos)) continue;
+    var pyposKeys = pixelOrdersY[i];
+    pxpos = parseFloat(pxpos);
+    for(var j = 0; j < pyposKeys.length; j++) {
+      var pypos = pyposKeys[j];
+      if(!pixel_positions.x[pxpos].y.hasOwnProperty(pypos)) continue;
+      pypos = parseFloat(pypos);
+      if(tilesAdded.filter(function(d){return d.pxpos === pxpos && d.pypos === pypos}).length > 0) {
+        //console.log("found duplicate, skipping");
+        continue;
+      }
+      // is it in the update range?
+      if((d.x >= 0) && (pxpos) >= xscan[0] && (pxpos) < xscan[1] && 
+          (pypos >= yrange[0] && pypos < yrange[1] || (pypos+imheight-1) >= yrange[0] && (pypos+imheight-1) < yrange[1]) ||
+        (d.y < 0) && (pypos+imheight-1) >= yscan[0] && (pypos+imheight-1) < yscan[1] && 
+          (pxpos >= xrange[0] && pxpos < xrange[1] || (pxpos+imwidth-1) >= xrange[0] && (pxpos+imwidth-1) < xrange[1]) ||
+        // need to check both ends of the yrange
+        (d.x < 0) && (pxpos+imwidth-1) >= xscan[0] && (pxpos+imwidth-1) < xscan[1] &&
+          (pypos >= yrange[0] && pypos < yrange[1] || (pypos+imheight-1) >= yrange[0] && (pypos+imheight-1) < yrange[1]) ||
+        // need to check both ends of the xrange
+        (d.y >= 0) && (pypos) >= yscan[0] && (pypos) < yscan[1] &&
+          (pxpos >= xrange[0] && pxpos < xrange[1] || (pxpos+imwidth-1) >= xrange[0] && (pxpos+imwidth-1) < xrange[1])) {
+
+          add_positions.push({"staging_loc":staging_loc,"pxpos":parseFloat(pxpos),"pypos":parseFloat(pypos),
+            "x":parseFloat(pxpos)-parseFloat(staging_loc.x)+ width/2.0,
+            "y":parseFloat(pypos)-parseFloat(staging_loc.y)+height/2.0,
+            "sample":pixel_positions.x[pxpos].y[pypos].sample[sample]});
+          //console.log({"x":parseFloat(pxpos)-staging_loc.x + width/2.0,
+          //  "y":parseFloat(pypos)-staging_loc.y+height/2.0,"sample":pixel_positions.x[pxpos].y[pypos].sample[sample]});
+          //console.log(pypos,staging_loc.y,height/2.0);
+      }
+    }
+  }
+  
+  var cgl = {};
+  cgl.x = good_loc.x - staging_loc.x + width/2.0;
+  cgl.y = good_loc.y - staging_loc.y + height/2.0;
+  var bgl = {};
+  bgl.x = bad_loc.x - staging_loc.x + width/2.0;
+  bgl.y = bad_loc.y - staging_loc.y + height/2.0;
+  appendTilesUsingTargets(cgl,bgl,add_positions);
+  //appendTilesWithRandomDelays(add_positions,0,1000);
+};
+
+// given the location of the "good" target, and the "bad" target
+// and the tiles to add, set the appropriate delays for the tiles
+// with respect to these targets
+function appendTilesUsingTargets(goodp,badp,tilePositions) {
+  //console.log("tilePositions",tilePositions)
+  //var goodLine = {"a":{"x":width/2.0,"y":height/2.0},"b":goodp};
+  //var badLine = {"a":{"x":width/2.0,"y":height/2.0},"b":badp};
+  //svg.selectAll("line").remove();
+  //svg.append("line").attr("x1",width/2.0).attr("y1",height/2.0).attr("x2",goodp.x).attr("y2",goodp.y).attr("stroke","blue");
+  //svg.append("line").attr("x1",width/2.0).attr("y1",height/2.0).attr("x2",badp.x).attr("y2",badp.y).attr("stroke","blue");
+  //var gb = {"minp":{"x":null,"y":null},"maxp":{"x":null,"y":null}}
+  //var bb = {"minp":{"x":null,"y":null},"maxp":{"x":null,"y":null}};
+
+  //gb.minp.x = goodBox.minp.x - staging_loc.x+width/2.0;
+  //gb.minp.y = goodBox.minp.y - staging_loc.y+height/2.0;
+  //gb.maxp.x = goodBox.maxp.x - staging_loc.x+width/2.0;
+  //gb.maxp.y = goodBox.maxp.y - staging_loc.y+height/2.0;
+  //bb.minp.x = badBox.minp.x - staging_loc.x+width/2.0;
+  //bb.minp.y = badBox.minp.y - staging_loc.y+height/2.0;
+  //bb.maxp.x = badBox.maxp.x - staging_loc.x+width/2.0;
+  //bb.maxp.y = badBox.maxp.y - staging_loc.y+height/2.0;
+  //var delays1 = setDelaysByBox(gb,bb,tilePositions);
+  //console.log("box delays",delays1);
+  //var delays2 = setDelaysByPathLines(goodLine,badLine,goodp,badp,tilePositions);
+  //console.log("path delays",delays2);
+  //var hl = {"a":{"x":null,"y":null},"b":{"x":null,"y":null}};
+  //hl.a.x = halfLine.a.x - staging_loc.x + width/2.0;
+  //hl.a.y = halfLine.a.y - staging_loc.y + height/2.0;
+  //hl.b.x = halfLine.b.x - staging_loc.x + width/2.0;
+  //hl.b.y = halfLine.b.y - staging_loc.y + height/2.0;
+  //console.log("hl",hl);
+  //var delays3 = setDelaysByHalfLine(hl,goodp,badp,tilePositions);
+  //console.log("half delays",delays3);
+  //var delays = [];
+  //for(var i = 0; i < delays1.length; i++) {
+    // slowest delay used
+    //var delay = Math.max(delays1[i],delays2[i],delays3[i]);
+    //var delay = Math.max(delays1[i],delays2[i]); // with -1 placeholders
+   // if(delay < 0) {
+      //console.log("delay less than zero",delay);
+      //delay = delays3[i];
+    //}
+   // delays.push(delay);
+    //console.log(delays1[i],delays2[i],delays3[i],delay);
+  //}
+
+  // append tiles with delays
+  for(var i = 0; i < tilePositions.length; i++) {
+    appendTileWithDelay(tilePositions[i],0);
+  }
+};
+
+function appendTileWithDelay(d,delay_length) {
+  var now = Date.now();
+  tilesAdded.push(d);
+  setTimeout(function() {appendTile(d,now,delay_length);},delay_length);
+};
+
+
+function appendTile(d,start_time,delay_length) {
+  d.x = d.pxpos-staging_loc.x+width/2.0;
+  d.y = d.pypos-staging_loc.y+height/2.0;
+  //console.log(d);
+  tileContainer.selectAll(".dummy")
+    .data([d])
+    .enter().append("svg:image")
+      //.attr("xlink:href", "../static/img/test_images/"+d.sample)
+      //.attr("xlink:href", "../adjusted_birds/"+d.sample)
+      //.attr("xlink:href", server_url+"images/500-375/"+d.sample)
+      //.attr("xlink:href", "{{url_for('serveImage',collection='500-375')}}?image_name="+d.sample)
+      //.attr("xlink:href", imagesCache["{{url_for('serveImage',collection='500-375')}}?image_name="+d.sample].src)
+      .attr("xlink:href", imagesCache["{{url_for('serveImage',collection='balanced-500-375')}}?image_name="+d.sample].src)
+      .attr("x", d.x)
+      .attr("y", d.y)
+      .attr("width", imwidth)
+      .attr("height",imheight)
+      .classed("tiles", true);
+  var end_time = Date.now();
+  logTileAddition(d,delay_length,start_time,end_time);
+
+  // remove this tile from the tilesAdded list
+  var i = 0;
+  for(; i < tilesAdded.length; i++) {
+    if(tilesAdded[i].pxpos ===d.pxpos && tilesAdded[i].pypos === d.pypos) {
+      break;
+    }
+  }
+  if(i < tilesAdded.length) {
+    tilesAdded.splice(i,1);
+  }
+  //console.log(d,start_time,end_time,end_time-start_time,delay_length);
+  tileContainer.selectAll(".foundText").moveToFront();
+};
+
+function logStudyEndButtonClick() {
+  //var newEntry = {"userid":userid,"recordType":"studyEndButtonClick","svgwidth":width,"svgheight":height,"stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+  //  "imwidth":imwidth,"imheight":imheight,
+  var newEntry = {"recordType":"studyEndButtonClick","stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    "timestamp":getTimestamp()};
+  log.push(newEntry);
+};
+function logTargetsFoundList() {
+  var newEntry = {"recordType":"targetsFoundList","targetsFoundList":targetsFoundList,"targetsFound":targetsFound,
+    "timestamp":getTimestamp()};
+  log.push(newEntry);
+};
+
+
+function logDragStart() {
+  //console.log("log drag start")
+  var coords = d3.mouse(overlay.node());
+  //console.log(coords);
+  //console.log("-----")
+  //var newEntry = {"userid":userid,"recordType":"dragStart","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp(),
+  var newEntry = {"recordType":"dragStart","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp(),
+    "stagingLoc":{"x":staging_loc.x,"y":staging_loc.y}
+  };
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logDragEnd() {
+  //console.log("log drag end")
+  var coords = d3.mouse(overlay.node());
+  //console.log(coords);
+  //console.log("-----")
+  //var newEntry = {"userid":userid,"recordType":"dragEnd","mousex":coords[0],"mousey":coords[1],
+  var newEntry = {"recordType":"dragEnd","mousex":coords[0],"mousey":coords[1],
+    "timestamp":getTimestamp(),"prevDragStart":{"x":prevDragStart.x,"y":prevDragStart.y},
+    "prevStagingLoc":{"x":prevStagingLoc.x,"y":prevStagingLoc.y},
+    "stagingLoc":{"x":staging_loc.x,"y":staging_loc.y}
+  };
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logDragMid() {
+  //console.log("log drag mid")
+  var coords = d3.mouse(overlay.node());
+  //console.log(coords);
+  //console.log("-----")
+  //var newEntry = {"userid":userid,"recordType":"dragMid","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp()};
+  var newEntry = {"recordType":"dragMid","mousex":coords[0],"mousey":coords[1],"timestamp":getTimestamp()};
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logStagingLoc() {
+  //var newEntry = {"userid":userid,"recordType":"visPosition","svgwidth":width,"svgheight":height,
+  var newEntry = {"recordType":"visPosition",
+    "stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},"timestamp":getTimestamp()
+    //"imwidth":imwidth,"imheight":imheight,
+  };
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logTileRemoval(toRemove) {
+  if(toRemove.length === 0) return;
+  // everything you need to reverse-engineer the original position:
+  // orig.x = curr.x + staging.x - width/2.0
+  // orig.y = curr.y + staging.y - height/2.0
+  //var newEntry = {"userid":userid,"recordType":"tileRemoval","svgwidth":width,"svgheight":height,"stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+  var newEntry = {"recordType":"tileRemoval","stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    "toRemove":toRemove,"timestamp":getTimestamp()};
+    //"imwidth":imwidth,"imheight":imheight};
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function logTileAddition(toAdd,delay,startTime,endTime) {
+  if(toAdd.length === 0) return;
+  // everything you need to reverse-engineer the original position:
+  // orig.x = curr.x + staging.x - width/2.0
+  // orig.y = curr.y + staging.y - height/2.0
+  //var newEntry = {"userid":userid,"recordType":"tileAddition","svgwidth":width,"svgheight":height,"stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+  //  "toAdd":toAdd,"timestamp":getTimestamp(),"delay":delay,"startTime":startTime,"endTime":endTime,"imwidth":imwidth,"imheight":imheight};
+  var newEntry = {"recordType":"tileAddition","stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    "toAdd":toAdd,"timestamp":getTimestamp(),"delay":delay,"startTime":startTime,"endTime":endTime};
+  //console.log(newEntry);
+  log.push(newEntry);
+};
+
+function sendGetRequestHelper(dat,responseType,url,callback,errorCallback) {
+  sendRequestHelper(dat,"GET",responseType,url,callback,errorCallback);
+};
+
+function sendGetRequest(dat,url,callback) {
+  sendGetRequestHelper(dat,"",url,callback);
+};
+
+function getTimestamp() {
+  return new Date().getTime()
+};
+
+function init() {
+  var parameters = {
+    "recordType":"initialState",
+    "userid":userid,
+    //"delays":{
+      //"fast":fast,
+      //"quick":quick,
+      //"med":med,
+      //"slow":slow
+    //},
+    "imwidth":imwidth,
+    "imheight":imheight,
+    "svgwidth":width,
+    "svgheight":height,
+    "starting_pos":starting_pos,
+    "center_loc":{"x":center_loc.x,"y":center_loc.y}, // starting location
+    "good_pos":good_pos,
+    "good_loc":good_loc,
+    "bad_pos":bad_pos,
+    "bad_loc":bad_loc,
+    "boxrad":boxrad,
+    //"halfLine":halfLine,
+    "image_positions":image_positions, // the images that were in the collage, and their positions
+    "timestamp":getTimestamp(),
+    "pixelOrdersX":pixelOrdersX,
+    "pixelOrdersY":pixelOrdersY,
+  };
+  log.push(parameters);// log the starting state
+
+  //console.log(staging_loc);
+  //console.log(0-staging_loc.x+width/2.0);
+  //console.log("y",0-staging_loc.y+height/2.0);
+  //console.log(imwidth*pixelOrdersX.length);
+  //console.log(imheight*pixelOrdersY[0].length);
+  svg.insert("rect",":first-child")
+    .attr("x",0-staging_loc.x+width/2.0)
+    .attr("y",0-staging_loc.y+height/2.0)
+    .attr("width",imwidth*pixelOrdersX.length)
+    .attr("height",imheight*pixelOrdersY[0].length)
+    .attr("fill","#bfbfbf")
+    .attr("stroke","black")
+    .attr("stroke-width",3)
+    .attr("stroke-dasharray","5,10,5")
+    .attr("id","background-rect");
+
+  svg.selectAll(".loadingText").remove();
+  
+  var cgl = {};
+  cgl.x = good_loc.x - staging_loc.x + width/2.0;
+  cgl.y = good_loc.y - staging_loc.y + height/2.0;
+  var bgl = {};
+  bgl.x = bad_loc.x - staging_loc.x + width/2.0;
+  bgl.y = bad_loc.y - staging_loc.y + height/2.0;
+  appendTilesUsingTargets(cgl,bgl,positions);
+};
+
+function reinit(positions){
+  var parameters = {
+    "recordType":"initialState",
+    "userid":userid,
+    //"delays":{
+      //"fast":fast,
+      //"quick":quick,
+      //"med":med,
+      //"slow":slow
+    //},
+    "imwidth":imwidth,
+    "imheight":imheight,
+    "svgwidth":width,
+    "svgheight":height,
+    "starting_pos":starting_pos,
+    "center_loc":{"x":center_loc.x,"y":center_loc.y}, // starting location
+    "good_pos":good_pos,
+    "good_loc":good_loc,
+    "bad_pos":bad_pos,
+    "bad_loc":bad_loc,
+    "boxrad":boxrad,
+    //"halfLine":halfLine,
+    "image_positions":image_positions, // the images that were in the collage, and their positions
+    "timestamp":getTimestamp(),
+    "pixelOrdersX":pixelOrdersX,
+    "pixelOrdersY":pixelOrdersY,
+  };
+  log.push(parameters);// log the starting state
+
+  svg.select("#background-rect").remove();
+  tileContainer.selectAll(".tiles").remove();
+  svg.insert("rect",":first-child")
+    .attr("x",0-staging_loc.x+width/2.0)
+    .attr("y",0-staging_loc.y+height/2.0)
+    .attr("width",imwidth*pixelOrdersX.length)
+    .attr("height",imheight*pixelOrdersY[0].length)
+    .attr("fill","#bfbfbf")
+    .attr("stroke","black")
+    .attr("stroke-width",3)
+    .attr("stroke-dasharray","5,10,5")
+    .attr("id","background-rect");
+  
+  var cgl = {};
+  cgl.x = good_loc.x - staging_loc.x + width/2.0;
+  cgl.y = good_loc.y - staging_loc.y + height/2.0;
+  var bgl = {};
+  bgl.x = bad_loc.x - staging_loc.x + width/2.0;
+  bgl.y = bad_loc.y - staging_loc.y + height/2.0;
+  appendTilesUsingTargets(cgl,bgl,positions);
+}
+
+function logFoundButtonClick() {
+  //var newEntry = {"userid":userid,"recordType":"foundButtonClick","svgwidth":width,"svgheight":height,"stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    //"imwidth":imwidth,"imheight":imheight,
+  var newEntry = {"recordType":"foundButtonClick","stagingLoc":{"x":staging_loc.x,"y":staging_loc.y},
+    "timestamp":getTimestamp()};
+  log.push(newEntry);
+};
+</script>
