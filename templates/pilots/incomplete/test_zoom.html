@@ -412,7 +412,10 @@
                             global_max.y = pypos;
                         }
                         if (!(pypos in pixel_positions.x[pxpos].y)) {
-                            pixel_positions.x[pxpos].y[pypos] = {"sample": image_positions.x[xpos].y[ypos].sample};
+                            pixel_positions.x[pxpos].y[pypos] = {
+                                "sample": image_positions.x[xpos].y[ypos].sample,
+                                "delay": image_positions.x[xpos].y[ypos].delay
+                            };
                         }
                         //imagesList.push("{{url_for('serveImage',collection='500-375')}}?image_name="+image_positions.x[xpos].y[ypos].sample[sample_pos]);
                         imagesList.push("{{url_for('serveImage',collection='balanced-500-375')}}?image_name=" + image_positions.x[xpos].y[ypos].sample[sample_pos]);
@@ -586,7 +589,8 @@
                         "staging_loc": staging_loc, "pxpos": parseFloat(pxpos), "pypos": parseFloat(pypos),
                         "x": parseFloat(pxpos) - parseFloat(staging_loc.x) + width / 2.0,
                         "y": parseFloat(pypos) - parseFloat(staging_loc.y) + height / 2.0,
-                        "sample": pixel_positions.x[pxpos].y[pypos].sample[sample]
+                        "sample": pixel_positions.x[pxpos].y[pypos].sample[sample],
+                        "delay": pixel_positions.x[pxpos].y[pypos].delay
                     });
                     //console.log({"x":parseFloat(pxpos)-staging_loc.x + width/2.0,
                     //  "y":parseFloat(pypos)-staging_loc.y+height/2.0,"sample":pixel_positions.x[pxpos].y[pypos].sample[sample]});
