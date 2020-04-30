@@ -3,6 +3,8 @@ import os, sys
 from flask import Flask, Response, request, session, send_file, make_response, render_template, url_for, redirect
 from math import sqrt
 import random
+import numpy as np
+from scipy.interpolate import griddata
 import json
 import time
 
@@ -135,7 +137,7 @@ def renderPuzzle():
     # msg="user: "+session["guid"]+" | page: puzzle | timestamp: "+str(current_milli_time())
     # print msg
     # app.logger.info(msg)
-    params = chooseExperimentalParameters()
+    params = chooseExperimentalParameters(zoom=True)
     # return {"delayVals":delayVals,"posVals":posVals,"imagesDict":imagesDict}
     response = make_response(render_template(os.path.join('pilots', 'incomplete', 'test_zoom.html'),
                                              delayVals_fast=params["delayVals"]["fast"],
@@ -219,7 +221,8 @@ def renderLocQuestionnaire():
 
 @app.route('/preview/search-study/consent-form/')
 def renderConsentFormPreview():
-    response = make_response(render_template(os.path.join('pilots', 'cclusters', 'preview', 'consent_form_preview.html')))
+    response = make_response(
+        render_template(os.path.join('pilots', 'cclusters', 'preview', 'consent_form_preview.html')))
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
@@ -375,6 +378,22 @@ def choosePositions():
     return start_positions[pos]
 
 
+def generate16Regions():
+    grid_x, grid_y = np.mgrid[1:5:1, 1:5:1]
+    points = np.random.randint(4, size=(8, 2))
+    grid_z0 = griddata(points, np.array([4, 4, 3, 3, 2, 2, 1, 1]), (grid_x, grid_y), method='nearest')
+    while not ((np.count_nonzero(grid_z0 == 4) == 4) and (np.count_nonzero(grid_z0 == 1) == 4)):
+        points = np.random.randint(4, size=(8, 2))
+        grid_z0 = griddata(points, np.array([4, 4, 3, 3, 2, 2, 1, 1]), (grid_x, grid_y), method='nearest')
+    res = {
+        "fast_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 1)[0], np.where(grid_z0 == 1)[1])],
+        "slow_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 4)[0], np.where(grid_z0 == 4)[1])],
+        "quick_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 2)[0], np.where(grid_z0 == 2)[1])],
+        "med_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 3)[0], np.where(grid_z0 == 3)[1])],
+    }
+    return res
+
+
 def chooseCondition():
     pos = db.updateTracker()
     if useRandom:
@@ -383,7 +402,7 @@ def chooseCondition():
         return start_positions[pos["sp"]], delays[pos["d"]]
 
 
-def chooseExperimentalParameters():
+def chooseExperimentalParameters(zoom=False):
     posVals, delayVals = chooseCondition()
     # delayVals = chooseDelays()
     # posVals = choosePositions()
@@ -396,7 +415,7 @@ def chooseExperimentalParameters():
     solution_dist = 8
     x_start = posVals["start"]["x"]
     y_start = posVals["start"]["y"]
-    xgood_init =[]
+    xgood_init = []
     ygood_init = []
     xbad_init = []
     ybad_init = []
@@ -416,12 +435,20 @@ def chooseExperimentalParameters():
     ybad_init.append(posVals["badp2"]["y"])
     ybad_init.append(posVals["badp3"]["y"])
     ybad_init.append(posVals["badp4"]["y"])
+
     # x_init = posVals["goodp"]["x"]
     # y_init = posVals["goodp"]["y"]
     # x1_init = posVals["badp"]["x"]
     # y1_init = posVals["badp"]["y"]
-    imagesDict = generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
-                                          xgood_init, ygood_init, xbad_init, ybad_init)
+    imagesDict = {}
+    if zoom:
+        imagesDict = generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
+                                              xgood_init, ygood_init, xbad_init, ybad_init, generate16Regions(),
+                                              delayVals)
+    else:
+        imagesDict = generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
+                                              xgood_init, ygood_init, xbad_init, ybad_init)
+
     return {"delayVals": delayVals, "posVals": posVals, "imagesDict": imagesDict}
 
 
@@ -485,14 +512,36 @@ def generateImagesDict():
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
+
 def checkLocationinPositions(xList, x):
     for item in xList:
-        if(item == x):
+        if (item == x):
             return True
     return False
 
+
+def checkLocationinRegion(regions, x_in, y_in, delays):
+    scaled = (x_in / 10, y_in / 10)
+    delay = 0
+    for key in regions.keys():
+        pos = regions[key]
+        for val in pos:
+            tmp = val["x"]
+            if val["x"] == scaled[0] and val["y"] == scaled[1]:
+                if key == "fast_pos":
+                    delay = delays["fast"]
+                if key == "slow_pos":
+                    delay = delays["slow"]
+                if key == "med_pos":
+                    delay = delays["med"]
+                if key == "quick_pos":
+                    delay = delays["quick"]
+
+    return delay
+
+
 def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
-                             xgood, ygood, xbad, ybad):
+                             xgood, ygood, xbad, ybad, regions={}, delays={}):
     files = os.listdir(collage_root + collection)
     # files.pop(files.index('solution.jpg'))
     # files.pop(files.index('solution.png'))
@@ -527,21 +576,23 @@ def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y
 
     # Generate output Dictionary
     myDict = {"x": {}}
-    for x in range(xgrid): 
-        myDict["x"][str(x)] = {"y": {}} #{'x': {'0': {'y': {}}}}
+    for x in range(xgrid):
+        myDict["x"][str(x)] = {"y": {}}  # {'x': {'0': {'y': {}}}}
         for y in range(ygrid):
-            myDict["x"][str(x)]["y"][str(y)] = {"sample": {}} #{'x': {'0': {'y': {'0': {'sample': {}}}}}}
+            myDict["x"][str(x)]["y"][str(y)] = {"sample": {}, "delay": 0}  # {'x': {'0': {'y': {'0': {'sample': {}}}}}}
 
     for x in range(xgrid):
         for y in range(ygrid):
-            if ((checkLocationinPositions(xgood, x) and checkLocationinPositions(ygood, y)) or (checkLocationinPositions(xbad, x) and checkLocationinPositions(ybad, y))):
+            myDict["x"][str(x)]["y"][str(y)]["delay"] = checkLocationinRegion(regions, x, y, delays)
+            if ((checkLocationinPositions(xgood, x) and checkLocationinPositions(ygood, y)) or (
+                    checkLocationinPositions(xbad, x) and checkLocationinPositions(ybad, y))):
                 # myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = "solution.jpg"
                 myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = "solution2.jpg"
-                offset += 1 # it's confusing here but we poped more files than the increment in here
+                offset += 1  # it's confusing here but we poped more files than the increment in here
             else:
                 myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = str(files[offset])
                 offset += 1
-    return myDict #{'x': {'0': {'y': {'0': {'sample': {'100': {'file_name'}}}}}}}
+    return myDict  # {'x': {'0': {'y': {'0': {'sample': {'100': {'file_name'}}}}}}}
 
 
 @app.route('/search-study/images/<collection>/')
@@ -580,4 +631,5 @@ def setupTrackers():
 if __name__ == "__main__":
     setupTrackers()
     app.run()
+
     # app.run(host='0.0.0.0', port=5064, debug=True)
