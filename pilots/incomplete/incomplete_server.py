@@ -377,19 +377,44 @@ def choosePositions():
     return start_positions[pos]
 
 
-def generate16Regions():
-    grid_x, grid_y = np.mgrid[1:5:1, 1:5:1]
-    points = np.random.randint(4, size=(8, 2))
-    grid_z0 = griddata(points, np.array([4, 4, 3, 3, 2, 2, 1, 1]), (grid_x, grid_y), method='nearest')
-    while not ((np.count_nonzero(grid_z0 == 4) == 4) and (np.count_nonzero(grid_z0 == 1) == 4)):
-        points = np.random.randint(4, size=(8, 2))
-        grid_z0 = griddata(points, np.array([4, 4, 3, 3, 2, 2, 1, 1]), (grid_x, grid_y), method='nearest')
+def generate16Regions(posVals):
+    good_init = posVals["goodps"] # [{"x": 1, "y": 14}, {"x":18, "y":37}, {"x":29, "y":21},{"x":32, "y":7}]
+    bad_init = posVals["badps"]
     res = {
-        "fast_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 1)[0], np.where(grid_z0 == 1)[1])],
-        "slow_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 4)[0], np.where(grid_z0 == 4)[1])],
-        "quick_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 2)[0], np.where(grid_z0 == 2)[1])],
-        "med_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 3)[0], np.where(grid_z0 == 3)[1])],
+        "fast_pos": [],
+        "slow_pos": [],
+        "quick_pos": [],
+        "med_pos": [],
     }
+    for good_pos in good_init:
+        position = {
+            "x":good_pos["x"] // 10,
+            "y":good_pos["y"] // 10,
+        }
+        res["fast_pos"].append(position)
+    for bad_pos in bad_init:
+        position = {
+            "x":bad_pos["x"] // 10,
+            "y":bad_pos["y"] // 10,
+        }
+        res["slow_pos"].append(position)
+    for i in range(3):
+        for j in range(3):
+            position = {"x":i,"y":j}
+            if(position not in res["fast_pos"] and position not in res["slow_pos"]):
+                res["med_pos"].append(position)
+    # grid_x, grid_y = np.mgrid[1:5:1, 1:5:1]
+    # points = np.random.randint(4, size=(8, 2))
+    # grid_z0 = griddata(points, np.array([4, 4, 3, 3, 2, 2, 1, 1]), (grid_x, grid_y), method='nearest')
+    # while not ((np.count_nonzero(grid_z0 == 4) == 4) and (np.count_nonzero(grid_z0 == 1) == 4)):
+    #     points = np.random.randint(4, size=(8, 2))
+    #     grid_z0 = griddata(points, np.array([4, 4, 3, 3, 2, 2, 1, 1]), (grid_x, grid_y), method='nearest')
+    # res = {
+    #     "fast_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 1)[0], np.where(grid_z0 == 1)[1])],
+    #     "slow_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 4)[0], np.where(grid_z0 == 4)[1])],
+    #     "quick_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 2)[0], np.where(grid_z0 == 2)[1])],
+    #     "med_pos": [{"x": tup[0], "y": tup[1]} for tup in zip(np.where(grid_z0 == 3)[0], np.where(grid_z0 == 3)[1])],
+    # }
     return res
 
 
@@ -421,7 +446,7 @@ def chooseExperimentalParameters(zoom=False):
     imagesDict = {}
     if zoom:
         imagesDict = generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
-                                              good_init, bad_init, generate16Regions(),
+                                              good_init, bad_init, generate16Regions(posVals),
                                               delayVals)
     else:
         imagesDict = generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
@@ -521,10 +546,7 @@ def checkLocationinRegion(regions, x_in, y_in, delays):
 def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
                              good,bad, regions={}, delays={}):
     files = os.listdir(collage_root + collection)
-    # files.pop(files.index('solution.jpg'))
-    # files.pop(files.index('solution.png'))
     files.pop(files.index('solution2.jpg'))
-    # files.pop(files.index('solution2.png'))
     random.shuffle(files)
     offset = 0  # random.randint(0, len(files)-1)
     # if offset + 450 >= len(files):
@@ -551,8 +573,8 @@ def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y
     
     y1_init = random.randint(0, ygrid-1)
     '''
-		#"goodps":[{"x": 14, "y": 1}, {"x":37, "y":18}, {"x":21, "y":29},{"x":7, "y":32}],
-		#"badps":[{"x":16,"y":12},{"x":4, "y":23},{"x":25, "y":37},{"x":31, "y":5}],
+	#"goodps":[{"x": 14, "y": 1}, {"x":37, "y":18}, {"x":21, "y":29},{"x":7, "y":32}],
+	#"badps":[{"x":16,"y":12},{"x":4, "y":23},{"x":25, "y":37},{"x":31, "y":5}],
 
 
     # Generate output Dictionary
