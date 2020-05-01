@@ -125,7 +125,6 @@
     var imagesCache = {};
 
     var image_positions = JSON.parse(decodeHtml("{{imagesDict}}"));
-    console.log(image_positions)
     var tilesAdded = [];
 
     //var starting_pos = {"x":{{starting_pos_x}},"y":{{starting_pos_y}}};  //DB: get the value oof starting image in grid
@@ -134,7 +133,8 @@
     var center_loc = {
         "x": starting_pos.x * imwidth + imwidth / 2.0,
         "y": starting_pos.y * imheight + imheight / 2.0
-    }; //DB: get grid location and multiply by image w&h to get location in points and then add half of image w&h to find center
+    }; 
+    //DB: get grid location and multiply by image w&h to get location in points and then add half of image w&h to find center
     //var center_loc = {"x":width/2.0,"y":height/2.0};
     // staging point is very important. For its value, it is actually the center point of some pic
     // but this pic is corresonding to the pic which is in the center of the view
@@ -162,7 +162,6 @@
     })
 
 
-    var r = 50;
     // DB: get bounding x and y of a box that surrounds the points. Where boxrad here is image size.
     //  TODO: box size might have to be revised to meet the zoom areas and not images. ie. window with divided into 16 pieces
     //  TODO: get boxes for regions
@@ -304,6 +303,7 @@
         })
         .on("end", function () {
             //if(click_flag) return;
+            console.log("yes i am here")
             logDragEnd();
             updatePrev();
             removeOffscreenTiles();
@@ -324,17 +324,17 @@
                 staging_loc.y += diff_y;
                 // find the new starting point according to the click
                 var current_pos = {"x": Math.floor(staging_loc.x / imwidth), "y": Math.floor(staging_loc.y / imheight)};
-                console.log("current:", current_pos);
                 zoom_level += 1;
                 zoom_value = zoom_ratio[zoom_level];
                 imwidth = 465 / zoom_value;
                 imheight = 349 / zoom_value;
                 //calcluate the new staging value based on new imwidth and imheight
-                var center_loc = {
+                center_loc = {
                     "x": current_pos.x * imwidth + imwidth / 2.0,
                     "y": current_pos.y * imheight + imheight / 2.0
                 };
                 staging_loc = {"x": center_loc.x, "y": center_loc.y};
+                tilesAdded = [];
                 traverseImagePositions(sample_pos, isFirst);
                 zoomObject.innerText = zoom_level + 1;
             }
@@ -355,11 +355,13 @@
                 imwidth = 465 / zoom_value;
                 imheight = 349 / zoom_value;
                 //calcluate the new staging value based on new imwidth and imheight
-                var center_loc = {
+                center_loc = {
                     "x": current_pos.x * imwidth + imwidth / 2.0,
                     "y": current_pos.y * imheight + imheight / 2.0
                 };
                 staging_loc = {"x": center_loc.x, "y": center_loc.y};
+                tilesAdded = [];
+
                 traverseImagePositions(sample_pos, isFirst);
                 zoomObject.innerText = zoom_level + 1;
             }
@@ -458,7 +460,7 @@
                             "delay": image_positions.x[xpos].y[ypos].delay
                         };
                         //if(tileWithinBox({"x":staging_loc.x-width/2.0+1,"y":staging_loc.y-height/2.0+1},
-                        //  {"x":staging_loc.x+width/2.0-1,"y":staging_loc.y+height/2.0-1},temp,imwidth,imheight)) {
+                          //{"x":staging_loc.x+width/2.0-1,"y":staging_loc.y+height/2.0-1},temp,imwidth,imheight)) {
                         if (tileWithinBox({"x": 0, "y": 0}, {"x": width, "y": height}, temp, imwidth, imheight)) {
                             //positions.push(temp);
                             positions.push(temp2);
@@ -631,7 +633,7 @@
 
         // append tiles with delays
         for (var i = 0; i < tilePositions.length; i++) {
-            appendTileWithDelay(tilePositions[i], true);
+            appendTileWithDelay(tilePositions[i], isFirst);
         }
     }
 
@@ -798,12 +800,6 @@
         var parameters = {
             "recordType": "initialState",
             "userid": userid,
-            //"delays":{
-            //"fast":fast,
-            //"quick":quick,
-            //"med":med,
-            //"slow":slow
-            //},
             "imwidth": imwidth,
             "imheight": imheight,
             "svgwidth": width,
@@ -844,7 +840,7 @@
 
     function reinit(positions) {
         var parameters = {
-            "recordType": "initialState",
+            "recordType": "reinitialState",
             "userid": userid,
             //"delays":{
             //"fast":fast,
@@ -886,7 +882,6 @@
             clearTimeout(timeout);
         timeouts = [];
         appendTilesUsingTargets(positions, false);
-
     }
 
     function logFoundButtonClick() {
