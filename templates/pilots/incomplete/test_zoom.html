@@ -125,6 +125,7 @@
     var imagesCache = {};
 
     var image_positions = JSON.parse(decodeHtml("{{imagesDict}}"));
+    console.log(image_positions)
     var tilesAdded = [];
 
     //var starting_pos = {"x":{{starting_pos_x}},"y":{{starting_pos_y}}};  //DB: get the value oof starting image in grid
@@ -141,33 +142,35 @@
     // grid positions
     //var good_pos ={"x":9,"y":0}, bad_pos={"x":9,"y":10};
     // TODO: Change good pos to locations of targets
-    var goodps_pos = {{good_pos | safe}} // jinja2 syntax
-    var badps_pos = {{bad_pos | safe}} // jinja2 syntax
+    var goodps_pos =
+    {{good_pos | safe}} // jinja2 syntax
+    var badps_pos =
+    {{bad_pos | safe}} // jinja2 syntax
     var good_locs = []
     var bad_locs = []
     goodps_pos.forEach(obj => {
-      var good_loc = {}
-      good_loc["x"] = imwidth * obj["x"] + imwidth / 2.0
-      good_loc["y"] = imheight * obj["y"] + imheight / 2.0
-      good_locs.push(good_loc)
+        var good_loc = {}
+        good_loc["x"] = imwidth * obj["x"] + imwidth / 2.0
+        good_loc["y"] = imheight * obj["y"] + imheight / 2.0
+        good_locs.push(good_loc)
     })
     badps_pos.forEach(obj => {
-      var bad_loc = {}
-      bad_loc["x"] = imwidth * obj["x"] + imwidth / 2.0
-      bad_loc["y"] = imheight * obj["y"] + imheight / 2.0
-      bad_locs.push(bad_loc) 
+        var bad_loc = {}
+        bad_loc["x"] = imwidth * obj["x"] + imwidth / 2.0
+        bad_loc["y"] = imheight * obj["y"] + imheight / 2.0
+        bad_locs.push(bad_loc)
     })
 
     //var good_pos = {"x":{{good_pos_x}}, "y":{{good_pos_y}}};
     //var bad_pos = {"x":{{bad_pos_x}}, "y":{{bad_pos_y}}};
     // pixel positions // DB: get centers of images for good and bad in real points
     //var good_loc = {
-      //  "x": imwidth * good_pos.x + imwidth / 2.0,
-        //"y": imheight * good_pos.y + imheight / 2.0
+    //  "x": imwidth * good_pos.x + imwidth / 2.0,
+    //"y": imheight * good_pos.y + imheight / 2.0
     //};
     //var bad_loc = {
-      //  "x": imwidth * bad_pos.x + imwidth / 2.0,
-       // "y": imheight * bad_pos.y + imheight / 2.0
+    //  "x": imwidth * bad_pos.x + imwidth / 2.0,
+    // "y": imheight * bad_pos.y + imheight / 2.0
     //};
 
 
@@ -176,13 +179,15 @@
     //  TODO: box size might have to be revised to meet the zoom areas and not images. ie. window with divided into 16 pieces
     //  TODO: get boxes for regions
     //var goodBox = {
-      //  "minp": {"x": good_loc.x - boxrad.x, "y": good_loc.y - boxrad.y},
-        //"maxp": {"x": good_loc.x + boxrad.x, "y": good_loc.y + boxrad.y}
+    //  "minp": {"x": good_loc.x - boxrad.x, "y": good_loc.y - boxrad.y},
+    //"maxp": {"x": good_loc.x + boxrad.x, "y": good_loc.y + boxrad.y}
     //};
     //var badBox = {
-      //  "minp": {"x": bad_loc.x - boxrad.x, "y": bad_loc.y - boxrad.y},
-        //"maxp": {"x": bad_loc.x + boxrad.x, "y": bad_loc.y + boxrad.y}
+    //  "minp": {"x": bad_loc.x - boxrad.x, "y": bad_loc.y - boxrad.y},
+    //"maxp": {"x": bad_loc.x + boxrad.x, "y": bad_loc.y + boxrad.y}
     //};
+
+    var timeouts = []
     var sample_pos = 100;
 
     // controlled by traverseImagePositions
@@ -228,20 +233,20 @@
         return false;
     }
 
-    function isFound(curr_pos_x, curr_pos_y, goodps_pos, badps_pos){
-      flag = false;
-      goodps_pos.forEach(good_pos => {
-        console.log(good_pos)
-        if(good_pos["x"] === curr_pos_x && good_pos["y"] === curr_pos_y){
-          flag = true;
-        }
-      })
-      badps_pos.forEach(bad_pos => {
-        if(bad_pos["x"] === curr_pos_x && bad_pos["y"] === curr_pos_y){
-          flag = true;
-        }
-      })
-      return flag;
+    function isFound(curr_pos_x, curr_pos_y, goodps_pos, badps_pos) {
+        flag = false;
+        goodps_pos.forEach(good_pos => {
+            console.log(good_pos)
+            if (good_pos["x"] === curr_pos_x && good_pos["y"] === curr_pos_y) {
+                flag = true;
+            }
+        })
+        badps_pos.forEach(bad_pos => {
+            if (bad_pos["x"] === curr_pos_x && bad_pos["y"] === curr_pos_y) {
+                flag = true;
+            }
+        })
+        return flag;
     }
 
     // the button is the "FOUND" button
@@ -254,8 +259,8 @@
         // check if the target is really in the center of the view and the zoom level is 5
         // calculate the index of current centered pic
         var curr_pos = {"x": Math.floor(staging_loc.x / imwidth), "y": Math.floor(staging_loc.y / imheight)};
-        if (zoom_level === 4 && 
-        (isFound(curr_pos.x, curr_pos.y, goodps_pos, badps_pos))) {
+        if (zoom_level === 4 &&
+            (isFound(curr_pos.x, curr_pos.y, goodps_pos, badps_pos))) {
             if (alreadyFound(curr_pos)) {
                 alert("You have already marked this target picture as found. Try to find the other target picture.");
             } else {
@@ -639,22 +644,23 @@
     // given the location of the "good" target, and the "bad" target
     // and the tiles to add, set the appropriate delays for the tiles
     // with respect to these targets
-    function appendTilesUsingTargets(tilePositions, isFirst=false) {
-      //console.log("tilePositions",tilePositions)
+    function appendTilesUsingTargets(tilePositions, isFirst = false) {
+        //console.log("tilePositions",tilePositions)
 
-      // append tiles with delays
-      for (var i = 0; i < tilePositions.length; i++) {
-          appendTileWithDelay(tilePositions[i], isFirst);
-      }
-    };
+        // append tiles with delays
+        for (var i = 0; i < tilePositions.length; i++) {
+            appendTileWithDelay(tilePositions[i], isFirst);
+        }
+    }
 
     function appendTileWithDelay(d, isFirst) {
         var now = Date.now();
-        let delay_length = isFirst ? 0 : d["delay"];
+        var delay_length = isFirst ? 0 : (zoom_level === 0) ? 0 : d["delay"];
         tilesAdded.push(d);
-        setTimeout(function () {
+        timeout = setTimeout(function () {
             appendTile(d, now, delay_length);
         }, delay_length);
+        timeouts.push(timeout)
     };
 
 
@@ -888,7 +894,6 @@
             "pixelOrdersY": pixelOrdersY,
         };
         log.push(parameters);// log the starting state
-
         svg.select("#background-rect").remove();
         tileContainer.selectAll(".tiles").remove();
         svg.insert("rect", ":first-child")
@@ -908,7 +913,11 @@
         //var bgl = {};
         //bgl.x = bad_loc.x - staging_loc.x + width / 2.0;
         //bgl.y = bad_loc.y - staging_loc.y + height / 2.0;
+        for (timeout of timeouts)
+            clearTimeout(timeout);
+        timeouts = [];
         appendTilesUsingTargets(positions, false);
+
     }
 
     function logFoundButtonClick() {
