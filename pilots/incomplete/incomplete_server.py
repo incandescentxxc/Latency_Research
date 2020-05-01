@@ -144,8 +144,8 @@ def renderPuzzle():
                                              delayVals_quick=params["delayVals"]["quick"],
                                              delayVals_med=params["delayVals"]["med"],
                                              delayVals_slow=params["delayVals"]["slow"],
-                                             good_pos=params["posVals"]["goodps"],
-                                             bad_pos=params["posVals"]["badps"],
+                                             good_pos=json.dumps(params["posVals"]["goodps"]),
+                                             bad_pos=json.dumps(params["posVals"]["badps"]),
                                              starting_pos_x=params["posVals"]["start"]["x"],
                                              starting_pos_y=params["posVals"]["start"]["y"],
                                              imagesDict=json.dumps(params["imagesDict"]
@@ -417,7 +417,6 @@ def chooseExperimentalParameters(zoom=False):
     y_start = posVals["start"]["y"]
     good_init = posVals["goodps"] # [{"x": 1, "y": 14}, {"x":18, "y":37}, {"x":29, "y":21},{"x":32, "y":7}]
     bad_init = posVals["badps"]
- 
 
     imagesDict = {}
     if zoom:
@@ -501,12 +500,11 @@ def checkLocationinPositions(comp_list, x, y):
 
 
 def checkLocationinRegion(regions, x_in, y_in, delays):
-    scaled = (x_in / 10, y_in / 10)
+    scaled = (x_in // 10, y_in // 10)
     delay = 0
     for key in regions.keys():
         pos = regions[key]
         for val in pos:
-            tmp = val["x"]
             if val["x"] == scaled[0] and val["y"] == scaled[1]:
                 if key == "fast_pos":
                     delay = delays["fast"]
@@ -562,11 +560,10 @@ def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y
     for x in range(xgrid):
         myDict["x"][str(x)] = {"y": {}}  # {'x': {'0': {'y': {}}}}
         for y in range(ygrid):
-            myDict["x"][str(x)]["y"][str(y)] = {"sample": {}, "delay": 0}  # {'x': {'0': {'y': {'0': {'sample': {}}}}}}
+            myDict["x"][str(x)]["y"][str(y)] = {"sample": {}}  # {'x': {'0': {'y': {'0': {'sample': {}}}}}}
 
     for x in range(xgrid):
         for y in range(ygrid):
-            myDict["x"][str(x)]["y"][str(y)]["delay"] = checkLocationinRegion(regions, x, y, delays)
             if (checkLocationinPositions(good,x, y) or checkLocationinPositions(bad, x, y)):
                 # myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = "solution.jpg"
                 myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = "solution2.jpg"
@@ -574,6 +571,7 @@ def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y
             else:
                 myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = str(files[offset])
                 offset += 1
+            myDict["x"][str(x)]["y"][str(y)]["delay"] = checkLocationinRegion(regions, x, y, delays)
     return myDict  # {'x': {'0': {'y': {'0': {'sample': {'100': {'file_name'}}}}}}}
 
 
