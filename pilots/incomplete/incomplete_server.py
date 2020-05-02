@@ -8,7 +8,7 @@ from scipy.interpolate import griddata
 import json
 import time
 
-sys.path.append("../..")
+sys.path.append("./")
 import makeDelays
 import db
 
