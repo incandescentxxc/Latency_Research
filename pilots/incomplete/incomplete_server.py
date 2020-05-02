@@ -45,8 +45,8 @@ uri = os.environ.get('MONGODB_URI')
 port = 5002
 localdbName = 'ss_pilot_incomplete_database'
 
-db.updateConnection('localhost:' + str(port), localdbName)
-# db.updateConnection(uri, dbName, retryWrites=False)
+#db.updateConnection('localhost:' + str(port), localdbName)
+db.updateConnection(uri, dbName, retryWrites=False)
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 

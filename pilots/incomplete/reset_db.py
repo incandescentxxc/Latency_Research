@@ -16,8 +16,8 @@ with open(dfn,"r") as f:
 
 uri = os.environ.get('MONGODB_URI')
 
-db.updateConnection('localhost:'+str(port),localdbName)
-#db.updateConnection(uri, dbName, retryWrites=False)
+#db.updateConnection('localhost:'+str(port),localdbName)
+db.updateConnection(uri, dbName, retryWrites=False)
 
 db.init(start_positions,delays)
 print ("tracker:" + str(db.db.tracker.count()))
