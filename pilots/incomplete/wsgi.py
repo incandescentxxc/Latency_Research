@@ -1,6 +1,6 @@
 import sys
 import logging
-from incomplete_server import app as application
+from .incomplete_server import app as application
 
 try:
   gunicorn_error_handlers = logging.getLogger('gunicorn.error').handlers
