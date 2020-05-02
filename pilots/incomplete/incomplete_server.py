@@ -15,7 +15,8 @@ import db
 # collage_root="/data/scidb/000/2/user_study_images/"
 # collage_root="/Users/leibatt/vis/code/search-study-data"
 # collage_root="/Users/leibatt/code/search-study-data/"
-collage_root = "../../"
+collage_root = ""
+image_root = "../../"
 
 spfn = "./start_positions_pilot.json"
 dfn = "./delays_pilot.json"
@@ -604,7 +605,7 @@ def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y
 @app.route('/search-study/images/<collection>/')
 def serveImage(collection):
     image_name = request.args.get('image_name')
-    response = make_response(send_file(collage_root + collection + "/" + image_name))
+    response = make_response(send_file(image_root + collection + "/" + image_name))
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
