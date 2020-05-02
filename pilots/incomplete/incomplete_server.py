@@ -8,17 +8,18 @@ from scipy.interpolate import griddata
 import json
 import time
 
-sys.path.append("../..")
+sys.path.append("../../")
 import makeDelays
 import db
 
 # collage_root="/data/scidb/000/2/user_study_images/"
 # collage_root="/Users/leibatt/vis/code/search-study-data"
 # collage_root="/Users/leibatt/code/search-study-data/"
-collage_root = "../../"
+collage_root = ""
+image_root = "../../"
 
-spfn = "../../start_positions_pilot.json"
-dfn = "../../delays_pilot.json"
+spfn = "./start_positions_pilot.json"
+dfn = "./delays_pilot.json"
 
 # for making random delays
 useRandom = True
@@ -39,9 +40,13 @@ with open(dfn, "r") as f:
 
 app = Flask(__name__, template_folder="../../templates", static_folder="../../static")
 app.secret_key = '_\x13\xb0\x8ev\xfbn\xb8\xc7A\xd0\x01\x14G,s\xe2\xda\xa0\x10\xa1>x.'
+dbName = 'heroku_b9j4gp33'
+uri = os.environ.get('MONGODB_URI')
 port = 5002
-dbName = 'ss_pilot_incomplete_database'
-db.updateConnection('localhost:' + str(port), dbName)
+localdbName = 'ss_pilot_incomplete_database'
+
+#db.updateConnection('localhost:' + str(port), localdbName)
+db.updateConnection(uri, dbName, retryWrites=False)
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -600,7 +605,7 @@ def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y
 @app.route('/search-study/images/<collection>/')
 def serveImage(collection):
     image_name = request.args.get('image_name')
-    response = make_response(send_file(collage_root + collection + "/" + image_name))
+    response = make_response(send_file(image_root + collection + "/" + image_name))
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
@@ -632,6 +637,6 @@ def setupTrackers():
 
 if __name__ == "__main__":
     setupTrackers()
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host="0.0.0.0", port=5000)
 
     # app.run(host='0.0.0.0', port=5064, debug=True)

@@ -7,10 +7,10 @@ db = None  # client['forecache_userstudy_database']
 
 
 # used for deployment
-def updateConnection(uri, dbname):
+def updateConnection(uri, dbname, retryWrites=False):
     global MONGODB_URI, db
     MONGODB_URI = uri
-    client = MongoClient(MONGODB_URI)
+    client = MongoClient(MONGODB_URI, retryWrites=retryWrites)
     db = client[dbname]
 
 
