@@ -39,9 +39,10 @@ with open(dfn, "r") as f:
 
 app = Flask(__name__, template_folder="../../templates", static_folder="../../static")
 app.secret_key = '_\x13\xb0\x8ev\xfbn\xb8\xc7A\xd0\x01\x14G,s\xe2\xda\xa0\x10\xa1>x.'
-port = 5002
-dbName = 'ss_pilot_incomplete_database'
-db.updateConnection('localhost:' + str(port), dbName)
+port = 29436
+host = "ds029436.mlab.com"
+dbName = 'heroku_b9j4gp33'
+db.updateConnection(host + ':' + str(port), dbName)
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
