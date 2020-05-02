@@ -15,7 +15,7 @@ import db
 # collage_root="/data/scidb/000/2/user_study_images/"
 # collage_root="/Users/leibatt/vis/code/search-study-data"
 # collage_root="/Users/leibatt/code/search-study-data/"
-collage_root = ""
+collage_root = "../"
 
 spfn = "./start_positions_pilot.json"
 dfn = "./delays_pilot.json"
