@@ -15,7 +15,7 @@ import db
 # collage_root="/data/scidb/000/2/user_study_images/"
 # collage_root="/Users/leibatt/vis/code/search-study-data"
 # collage_root="/Users/leibatt/code/search-study-data/"
-collage_root = ""
+collage_root = "../../"
 
 spfn = "./start_positions_pilot.json"
 dfn = "./delays_pilot.json"
@@ -55,10 +55,6 @@ current_milli_time = lambda: int(round(time.time() * 1000))
 def renderLandingPreview():
     return redirect(url_for('renderConsentFormPreview'))
 
-
-@app.route('/search-study/<path:filename>', methods=['GET', 'POST'])
-def imageServe(filename):
-    return send_file(filename)
 
 @app.route('/search-study/')
 def renderLanding():
@@ -464,6 +460,12 @@ def chooseExperimentalParameters(zoom=False):
 
 
 # --------------End Condition Handlers--------------#
+
+@app.route('/search-study/')
+def hello_world():
+    response = Response('Hello, World!')
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
 
 
 @app.route('/search-study/get-user-id/')
