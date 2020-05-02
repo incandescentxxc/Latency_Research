@@ -8,14 +8,14 @@ from scipy.interpolate import griddata
 import json
 import time
 
-sys.path.append("./")
+sys.path.append("../../")
 import makeDelays
 import db
 
 # collage_root="/data/scidb/000/2/user_study_images/"
 # collage_root="/Users/leibatt/vis/code/search-study-data"
 # collage_root="/Users/leibatt/code/search-study-data/"
-collage_root = "./"
+collage_root = "../../"
 
 spfn = "./start_positions_pilot.json"
 dfn = "./delays_pilot.json"
