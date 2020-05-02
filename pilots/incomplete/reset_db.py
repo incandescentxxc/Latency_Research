@@ -3,7 +3,7 @@ import json
 import os
 sys.path.append("../..")
 import db
-from incomplete_server import port,dbName,spfn,dfn
+from incomplete_server import port,localdbName, dbName,spfn,dfn
 
 start_positions = None
 delays = None
@@ -15,9 +15,9 @@ with open(dfn,"r") as f:
   delays = json.loads(f.read())
 
 uri = os.environ.get('MONGODB_URI')
-remotedbName = 'heroku_b9j4gp33'
-#db.updateConnection('localhost:'+str(port),dbName)
-db.updateConnection(uri, remotedbName, retryWrites=False)
+
+db.updateConnection('localhost:'+str(port),localdbName)
+#db.updateConnection(uri, dbName, retryWrites=False)
 
 db.init(start_positions,delays)
 print ("tracker:" + str(db.db.tracker.count()))

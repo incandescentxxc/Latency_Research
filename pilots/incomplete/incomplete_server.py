@@ -45,8 +45,8 @@ uri = os.environ.get('MONGODB_URI')
 port = 5002
 localdbName = 'ss_pilot_incomplete_database'
 
-#db.updateConnection('localhost:' + str(port), localdbName)
-db.updateConnection(uri, dbName, retryWrites=False)
+db.updateConnection('localhost:' + str(port), localdbName)
+# db.updateConnection(uri, dbName, retryWrites=False)
 
 current_milli_time = lambda: int(round(time.time() * 1000))
 
@@ -149,12 +149,13 @@ def renderPuzzle():
                                              delayVals_quick=params["delayVals"]["quick"],
                                              delayVals_med=params["delayVals"]["med"],
                                              delayVals_slow=params["delayVals"]["slow"],
+                                             regions=json.dumps(params["regions"]),
                                              good_pos=json.dumps(params["posVals"]["goodps"]),
                                              bad_pos=json.dumps(params["posVals"]["badps"]),
                                              starting_pos_x=params["posVals"]["start"]["x"],
                                              starting_pos_y=params["posVals"]["start"]["y"],
                                              imagesDict=json.dumps(params["imagesDict"]
-                                             )))
+                                                                   )))
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
 
@@ -383,7 +384,7 @@ def choosePositions():
 
 
 def generate16Regions(posVals):
-    good_init = posVals["goodps"] # [{"x": 1, "y": 14}, {"x":18, "y":37}, {"x":29, "y":21},{"x":32, "y":7}]
+    good_init = posVals["goodps"]  # [{"x": 1, "y": 14}, {"x":18, "y":37}, {"x":29, "y":21},{"x":32, "y":7}]
     bad_init = posVals["badps"]
     res = {
         "fast_pos": [],
@@ -393,21 +394,25 @@ def generate16Regions(posVals):
     }
     for good_pos in good_init:
         position = {
-            "x":good_pos["x"] // 10,
-            "y":good_pos["y"] // 10,
+            "x": good_pos["x"] // 10,
+            "y": good_pos["y"] // 10,
         }
         res["fast_pos"].append(position)
     for bad_pos in bad_init:
         position = {
-            "x":bad_pos["x"] // 10,
-            "y":bad_pos["y"] // 10,
+            "x": bad_pos["x"] // 10,
+            "y": bad_pos["y"] // 10,
         }
         res["slow_pos"].append(position)
-    for i in range(3):
-        for j in range(3):
-            position = {"x":i,"y":j}
-            if(position not in res["fast_pos"] and position not in res["slow_pos"]):
-                res["med_pos"].append(position)
+    for i in range(4):
+        for j in range(4):
+            position = {"x": i, "y": j}
+            if (position not in res["fast_pos"] and position not in res["slow_pos"]):
+                choice = np.random.randint(2)
+                if choice == 0:
+                    res["med_pos"].append(position)
+                else:
+                    res["quick_pos"].append(position)
     # grid_x, grid_y = np.mgrid[1:5:1, 1:5:1]
     # points = np.random.randint(4, size=(8, 2))
     # grid_z0 = griddata(points, np.array([4, 4, 3, 3, 2, 2, 1, 1]), (grid_x, grid_y), method='nearest')
@@ -445,19 +450,21 @@ def chooseExperimentalParameters(zoom=False):
     solution_dist = 8
     x_start = posVals["start"]["x"]
     y_start = posVals["start"]["y"]
-    good_init = posVals["goodps"] # [{"x": 1, "y": 14}, {"x":18, "y":37}, {"x":29, "y":21},{"x":32, "y":7}]
+    good_init = posVals["goodps"]  # [{"x": 1, "y": 14}, {"x":18, "y":37}, {"x":29, "y":21},{"x":32, "y":7}]
     bad_init = posVals["badps"]
 
     imagesDict = {}
+    regions = {}
     if zoom:
+        regions = generate16Regions(posVals)
         imagesDict = generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
-                                              good_init, bad_init, generate16Regions(posVals),
+                                              good_init, bad_init, regions,
                                               delayVals)
     else:
         imagesDict = generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
                                               good_init, bad_init)
 
-    return {"delayVals": delayVals, "posVals": posVals, "imagesDict": imagesDict}
+    return {"delayVals": delayVals, "posVals": posVals, "imagesDict": imagesDict, "regions": regions}
 
 
 # --------------End Condition Handlers--------------#
@@ -522,9 +529,8 @@ def generateImagesDict():
 
 
 def checkLocationinPositions(comp_list, x, y):
-
     for i in range(len(comp_list)):
-        if(comp_list[i]["x"] == x and comp_list[i]["y"] == y):
+        if (comp_list[i]["x"] == x and comp_list[i]["y"] == y):
             return True
     return False
 
@@ -549,7 +555,7 @@ def checkLocationinRegion(regions, x_in, y_in, delays):
 
 
 def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y_start, \
-                             good,bad, regions={}, delays={}):
+                             good, bad, regions={}, delays={}):
     files = os.listdir(collage_root + collection)
     files.pop(files.index('solution2.jpg'))
     random.shuffle(files)
@@ -578,9 +584,8 @@ def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y
     
     y1_init = random.randint(0, ygrid-1)
     '''
-	#"goodps":[{"x": 14, "y": 1}, {"x":37, "y":18}, {"x":21, "y":29},{"x":7, "y":32}],
-	#"badps":[{"x":16,"y":12},{"x":4, "y":23},{"x":25, "y":37},{"x":31, "y":5}],
-
+    # "goodps":[{"x": 14, "y": 1}, {"x":37, "y":18}, {"x":21, "y":29},{"x":7, "y":32}],
+    # "badps":[{"x":16,"y":12},{"x":4, "y":23},{"x":25, "y":37},{"x":31, "y":5}],
 
     # Generate output Dictionary
     myDict = {"x": {}}
@@ -591,7 +596,7 @@ def generateImagesDictHelper(collection, xgrid, ygrid, solution_dist, x_start, y
 
     for x in range(xgrid):
         for y in range(ygrid):
-            if (checkLocationinPositions(good,x, y) or checkLocationinPositions(bad, x, y)):
+            if (checkLocationinPositions(good, x, y) or checkLocationinPositions(bad, x, y)):
                 # myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = "solution.jpg"
                 myDict["x"][str(x)]["y"][str(y)]["sample"]["100"] = "solution2.jpg"
                 offset += 1  # it's confusing here but we poped more files than the increment in here
