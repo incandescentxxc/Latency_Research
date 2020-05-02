@@ -125,7 +125,6 @@
     var imagesCache = {};
 
     var image_positions = JSON.parse(decodeHtml("{{imagesDict}}"));
-    console.log(image_positions)
     var tilesAdded = [];
 
     //var starting_pos = {"x":{{starting_pos_x}},"y":{{starting_pos_y}}};  //DB: get the value oof starting image in grid
@@ -134,7 +133,8 @@
     var center_loc = {
         "x": starting_pos.x * imwidth + imwidth / 2.0,
         "y": starting_pos.y * imheight + imheight / 2.0
-    }; //DB: get grid location and multiply by image w&h to get location in points and then add half of image w&h to find center
+    }; 
+    //DB: get grid location and multiply by image w&h to get location in points and then add half of image w&h to find center
     //var center_loc = {"x":width/2.0,"y":height/2.0};
     // staging point is very important. For its value, it is actually the center point of some pic
     // but this pic is corresonding to the pic which is in the center of the view
@@ -161,20 +161,7 @@
         bad_locs.push(bad_loc)
     })
 
-    //var good_pos = {"x":{{good_pos_x}}, "y":{{good_pos_y}}};
-    //var bad_pos = {"x":{{bad_pos_x}}, "y":{{bad_pos_y}}};
-    // pixel positions // DB: get centers of images for good and bad in real points
-    //var good_loc = {
-    //  "x": imwidth * good_pos.x + imwidth / 2.0,
-    //"y": imheight * good_pos.y + imheight / 2.0
-    //};
-    //var bad_loc = {
-    //  "x": imwidth * bad_pos.x + imwidth / 2.0,
-    // "y": imheight * bad_pos.y + imheight / 2.0
-    //};
 
-
-    var r = 50;
     // DB: get bounding x and y of a box that surrounds the points. Where boxrad here is image size.
     //  TODO: box size might have to be revised to meet the zoom areas and not images. ie. window with divided into 16 pieces
     //  TODO: get boxes for regions
@@ -252,8 +239,8 @@
     // the button is the "FOUND" button
     finish_button_obj.onclick = function () {
         // we do not perform check if the users actually find more than 2 targets
-        if (targetsFoundList.length === 2) {
-            alert("You have already marked both target pictures as found. You have completed the task.");
+        if (targetsFoundList.length === 1) {
+            alert("You have already marked the target pictures as found. You have completed the task. Please click Finish to exit this experiment.");
             return;
         }
         // check if the target is really in the center of the view and the zoom level is 5
@@ -268,10 +255,11 @@
                 targetsFound++;
                 targetsFoundList.push(curr_pos);
                 targetsFoundObj.innerText = targetsFound;
-                if (targetsFound === 2) {
-                    alert("Correct! You have found both targets. You are done with this task.");
+                if (targetsFound >= 2) {
+                    alert("Correct! You have found more than 1 targets. You are done with this task. Please click Finish button.");
                 } else {
                     alert("Correct, you found the target picture! You are done with this task.");
+                    alert("Please click Finish button to exit the experiment.")
                 }
             }
         } else {
@@ -315,6 +303,7 @@
         })
         .on("end", function () {
             //if(click_flag) return;
+            console.log("yes i am here")
             logDragEnd();
             updatePrev();
             removeOffscreenTiles();
@@ -335,17 +324,17 @@
                 staging_loc.y += diff_y;
                 // find the new starting point according to the click
                 var current_pos = {"x": Math.floor(staging_loc.x / imwidth), "y": Math.floor(staging_loc.y / imheight)};
-                console.log("current:", current_pos);
                 zoom_level += 1;
                 zoom_value = zoom_ratio[zoom_level];
                 imwidth = 465 / zoom_value;
                 imheight = 349 / zoom_value;
                 //calcluate the new staging value based on new imwidth and imheight
-                var center_loc = {
+                center_loc = {
                     "x": current_pos.x * imwidth + imwidth / 2.0,
                     "y": current_pos.y * imheight + imheight / 2.0
                 };
                 staging_loc = {"x": center_loc.x, "y": center_loc.y};
+                tilesAdded = [];
                 traverseImagePositions(sample_pos, isFirst);
                 zoomObject.innerText = zoom_level + 1;
             }
@@ -359,18 +348,20 @@
                 var diff_y = coords[1] - height / 2;
                 staging_loc.x += diff_x;
                 staging_loc.y += diff_y;
-                // todo find the new starting point according to the click
+                // find the new starting point according to the click
                 var current_pos = {"x": Math.floor(staging_loc.x / imwidth), "y": Math.floor(staging_loc.y / imheight)};
                 zoom_level -= 1;
                 zoom_value = zoom_ratio[zoom_level];
                 imwidth = 465 / zoom_value;
                 imheight = 349 / zoom_value;
                 //calcluate the new staging value based on new imwidth and imheight
-                var center_loc = {
+                center_loc = {
                     "x": current_pos.x * imwidth + imwidth / 2.0,
                     "y": current_pos.y * imheight + imheight / 2.0
                 };
                 staging_loc = {"x": center_loc.x, "y": center_loc.y};
+                tilesAdded = [];
+
                 traverseImagePositions(sample_pos, isFirst);
                 zoomObject.innerText = zoom_level + 1;
             }
@@ -469,7 +460,7 @@
                             "delay": image_positions.x[xpos].y[ypos].delay
                         };
                         //if(tileWithinBox({"x":staging_loc.x-width/2.0+1,"y":staging_loc.y-height/2.0+1},
-                        //  {"x":staging_loc.x+width/2.0-1,"y":staging_loc.y+height/2.0-1},temp,imwidth,imheight)) {
+                          //{"x":staging_loc.x+width/2.0-1,"y":staging_loc.y+height/2.0-1},temp,imwidth,imheight)) {
                         if (tileWithinBox({"x": 0, "y": 0}, {"x": width, "y": height}, temp, imwidth, imheight)) {
                             //positions.push(temp);
                             positions.push(temp2);
@@ -630,13 +621,6 @@
                 }
             }
         }
-
-        //var cgl = {};
-        //cgl.x = good_loc.x - staging_loc.x + width / 2.0;
-        //cgl.y = good_loc.y - staging_loc.y + height / 2.0;
-        //var bgl = {};
-        //bgl.x = bad_loc.x - staging_loc.x + width / 2.0;
-        //bgl.y = bad_loc.y - staging_loc.y + height / 2.0;
         appendTilesUsingTargets(add_positions);
         //appendTilesWithRandomDelays(add_positions,0,1000);
     };
@@ -816,12 +800,6 @@
         var parameters = {
             "recordType": "initialState",
             "userid": userid,
-            //"delays":{
-            //"fast":fast,
-            //"quick":quick,
-            //"med":med,
-            //"slow":slow
-            //},
             "imwidth": imwidth,
             "imheight": imheight,
             "svgwidth": width,
@@ -857,19 +835,12 @@
             .attr("id", "background-rect");
 
         svg.selectAll(".loadingText").remove();
-
-        //var cgl = {};
-        //cgl.x = good_loc.x - staging_loc.x + width / 2.0;
-        //cgl.y = good_loc.y - staging_loc.y + height / 2.0;
-        //var bgl = {};
-        //bgl.x = bad_loc.x - staging_loc.x + width / 2.0;
-        //bgl.y = bad_loc.y - staging_loc.y + height / 2.0;
         appendTilesUsingTargets(positions, true);
     };
 
     function reinit(positions) {
         var parameters = {
-            "recordType": "initialState",
+            "recordType": "reinitialState",
             "userid": userid,
             //"delays":{
             //"fast":fast,
@@ -907,17 +878,10 @@
             .attr("stroke-dasharray", "5,10,5")
             .attr("id", "background-rect");
 
-        //var cgl = {};
-        //cgl.x = good_loc.x - staging_loc.x + width / 2.0;
-        //cgl.y = good_loc.y - staging_loc.y + height / 2.0;
-        //var bgl = {};
-        //bgl.x = bad_loc.x - staging_loc.x + width / 2.0;
-        //bgl.y = bad_loc.y - staging_loc.y + height / 2.0;
         for (timeout of timeouts)
             clearTimeout(timeout);
         timeouts = [];
         appendTilesUsingTargets(positions, false);
-
     }
 
     function logFoundButtonClick() {
