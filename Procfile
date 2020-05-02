@@ -1,1 +1,1 @@
-web: bash pilots/incomplete/run_gunicorn.sh
+web: gunicorn --pythonpath pilots incomplete.wsgi:application
