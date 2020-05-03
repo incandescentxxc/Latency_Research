@@ -54,11 +54,10 @@ When you are ready to start, please press "Continue" below.
     <p align = "right">
       <input type= "hidden" name = "id" id = "id" value = "DEBUGGING" /> 
       <input type="hidden" name = "image_id" value = "DEBUGGING" />
-      <button  style="width: 150px;margin-left:160px;font-size:16px;" id= "Accept" onclick="handleSubmit()">Continue</button>
     </p>
 
 </form>
-
+<button  style="width: 150px;margin-left:160px;font-size:16px;" id= "Accept" onclick="handleSubmit()">Continue</button>
 <script type="text/javascript">
   // store waldo data
   //sessionStorage.id = "{{guid}}";
@@ -66,8 +65,10 @@ When you are ready to start, please press "Continue" below.
   function clickFunc() {
     alert("NOTE: The target picture is either directly to the left or directly to the right of your starting position. Please click OK to confirm and move on to the task.");
   };
-  
+
   function handleSubmit(){
+    console.log("done")
+    console.log("{{url_for('renderPuzzle')}}");
     window.location = "{{url_for('renderPuzzle')}}";
   };
 </script>
