@@ -304,7 +304,6 @@
         })
         .on("end", function () {
             //if(click_flag) return;
-            console.log("yes i am here")
             logDragEnd();
             updatePrev();
             removeOffscreenTiles();
@@ -634,6 +633,7 @@
     function appendTileWithDelay(d, isFirst) {
         var now = Date.now();
         var delay_length = isFirst ? 0 : (zoom_level === 0) ? 0 : d["delay"];
+        //console.log(delay_length)
         tilesAdded.push(d);
         timeout = setTimeout(function () {
             appendTile(d, now, delay_length);

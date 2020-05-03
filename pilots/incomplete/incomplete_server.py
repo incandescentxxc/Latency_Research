@@ -22,7 +22,7 @@ spfn = "./start_positions_pilot.json"
 dfn = "./delays_pilot.json"
 
 # for making random delays
-useRandom = True
+useRandom = False
 # random.seed(103)
 random.seed(109)
 minThreshold = 7000
@@ -45,7 +45,7 @@ uri = os.environ.get('MONGODB_URI')
 port = 5002
 localdbName = 'ss_pilot_incomplete_database'
 
-#db.updateConnection('localhost:' + str(port), localdbName)
+# db.updateConnection('localhost:' + str(port), localdbName)
 db.updateConnection(uri, dbName, retryWrites=False)
 
 current_milli_time = lambda: int(round(time.time() * 1000))
@@ -431,10 +431,11 @@ def generate16Regions(posVals):
 def chooseCondition():
     pos = db.updateTracker()
     # choose one location object out of current 4
+    pos_delay = random.randint(0,5)
     if useRandom:
         return start_positions[pos["sp"]], makeDelays.makeRandomDelays(minThreshold, maxThreshold, denom)
     else:
-        return start_positions[pos["sp"]], delays[pos["d"]]
+        return start_positions[pos["sp"]], delays[pos_delay]
 
 
 def chooseExperimentalParameters(zoom=False):
