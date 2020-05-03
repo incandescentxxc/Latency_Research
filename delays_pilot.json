@@ -1,4 +1,7 @@
 [
+{"fast":0,"quick":750,"med":1500,"slow":0},
 {"fast":0,"quick":750,"med":1500,"slow":2500},
-{"fast":0,"quick":750,"med":1500,"slow":2500}
+{"fast":0,"quick":750,"med":1500,"slow":7000},
+{"fast":0,"quick":750,"med":1500,"slow":10000},
+{"fast":0,"quick":750,"med":1500,"slow":14000}
 ]
