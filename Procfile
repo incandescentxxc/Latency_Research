@@ -1,1 +1,1 @@
-web: gunicorn --pythonpath pilots incomplete.wsgi:application
+web: gunicorn --pythonpath pilots --workers 7 incomplete.wsgi:application

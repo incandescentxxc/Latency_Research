@@ -4,3 +4,4 @@
 .idea
 /pilots/incomplete/logs
 *.log
+logs
