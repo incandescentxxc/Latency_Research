@@ -49,12 +49,12 @@ will not be able to interact with the collage anymore.
 When you are ready to start, please press "Continue" below.
 </p>
 
-<form method = "post" action="{{url_for('renderPuzzle')}}">
+<form>
   <p>&nbsp;</p>
     <p align = "right">
       <input type= "hidden" name = "id" id = "id" value = "DEBUGGING" /> 
       <input type="hidden" name = "image_id" value = "DEBUGGING" />
-      <input type= "submit"  style="width: 150px;margin-left:160px;font-size:16px;" id= "Accept" value = "Continue" onclick="clickFunc()">
+      <input type= "submit"  style="width: 150px;margin-left:160px;font-size:16px;" id= "Accept" value = "Continue" onclick="handleSubmit()">
     </p>
 
 </form>
@@ -64,6 +64,10 @@ When you are ready to start, please press "Continue" below.
   //sessionStorage.id = "{{guid}}";
   document.getElementById("id").value = sessionStorage.id
   function clickFunc() {
-    //alert("NOTE: The target picture is either directly to the left or directly to the right of your starting position. Please click OK to confirm and move on to the task.");
+    alert("NOTE: The target picture is either directly to the left or directly to the right of your starting position. Please click OK to confirm and move on to the task.");
+  };
+  
+  function handleSubmit(){
+    window.location = "{{url_for('renderPuzzle')}}";
   };
 </script>
