@@ -161,7 +161,13 @@
         bad_locs.push(bad_loc)
     })
 
-
+    var delay_list = {
+        "fast": {{delayVals_fast}},
+        "quick":{{delayVals_quick}},
+        "med":{{delayVals_med}},
+        "slow":{{delayVals_slow}}
+    }
+    logPositionsDelays();
     // DB: get bounding x and y of a box that surrounds the points. Where boxrad here is image size.
     //  TODO: box size might have to be revised to meet the zoom areas and not images. ie. window with divided into 16 pieces
     //  TODO: get boxes for regions
@@ -693,6 +699,16 @@
         };
         log.push(newEntry);
     };
+
+    function logPositionsDelays() {
+        var newEntry = {
+            "recordType": "positionsandDelay",
+            "goodpos":goodps_pos,
+            "badpos":badps_pos,
+            "delays":delay_list
+        };
+        log.push(newEntry)
+    }
 
 
     function logDragStart() {
